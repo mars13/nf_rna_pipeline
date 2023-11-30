@@ -1,0 +1,26 @@
+# Includelist some files
+!.gitignore
+!README.md
+
+# Ignore all files named .DS_Store or ending with .log
+**/.DS_Store
+**/._*
+**.log
+**.out
+
+# Ignore files from analysis, results, data and log
+data/*
+analysis/*
+results/*
+log/*
+documentation/*.txt
+scripts/dev_helper_scripts/*
+
+#Ignore nextflow work and logs
+work/*
+.nextflow.*
+.nextflow/
+
+# Include script files
+!scripts/*
+!documentation/*.config
