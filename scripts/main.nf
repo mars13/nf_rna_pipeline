@@ -1,6 +1,6 @@
 nextflow.enable.dsl = 2
 
-include { trimGalore; checkStrand; indexLength; starAlign } from './modules/rnaseq_alignment'
+include { trimGalore; checkStrand; indexLength; starAlign; samtools} from './modules/rnaseq_alignment'
 
 
 
@@ -76,37 +76,30 @@ workflow {
         trimGalore.out
         .map({key, file ->
             tuple( key, 
-                file.findAll({ it =~ /.*(?:R1|R2)_trimmed\.fastq\.gz$/ })
+                file.findAll({ it =~ /.*(?:R1|R2)_trimmed.*\.fastq\.gz$/ })
                 )
             }).set{ star_input }
 
         //Run strandedness
-        /*
         strandedness = checkStrand(reads, "${params.pairedEnd}")
         strandedness.map { keys, files -> keys }
         .collectFile(
             name: 'strandedness_all.txt',
             storeDir: "${params.outDir}/check_strandedness/",
             newLine: true, sort: true)
-        */
     }   
     
     if (params.align) {
         if (params.qc){
-            star_input.view()
-            starAlign(star_input,
-                "${params.pairedEnd}",
-                indexLength(star_input))
+
         } else {
-           //Search for trimmed files in the corresponding folder
-        }
+
 
         
+        }
+        starAlign(star_input, "${params.pairedEnd}", indexLength(star_input))
+        samtools(starAlign.out.bam)
     }
-   
-
-
-
 
 }
 

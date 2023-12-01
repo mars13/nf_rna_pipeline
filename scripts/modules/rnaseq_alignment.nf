@@ -19,7 +19,7 @@ process trimGalore {
     script:
     def r1_fname = "trimgalore/${sample_id}/${reads[0].getBaseName(2)}_val_1.fq.gz"
     def r1_trimmed = "trimgalore/${sample_id}/${reads[0].name.replaceFirst('R1', 'R1_trimmed')}"
-
+    
     if (pairedEnd == true){
         """   
         mkdir -p trimgalore 
@@ -131,12 +131,13 @@ process starAlign {
         val(usedIndex)
 
     output:
-        publishDir "${params.outDir}/STAR/", mode: 'copy'
-        path("${sample_id}/${sample_id}.*")
+        publishDir "${params.outDir}/star/", mode: 'copy', pattern: "${sample_id}/${sample_id}*.out"    //fix to add .out.tab
+        path("${sample_id}/${sample_id}.*"), emit: files
+        tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
 
     script:
     // STAR params defined as concatenated strings singe triple quote multiline declaration generates newline
-    def star_params = "--readFilesCommand zcat" +
+    def star_params = "--readFilesCommand zcat " +
                       "--twopassMode Basic --runThreadN 16 --runDirPerm All_RWX " +
                       "--outFilterType BySJout --outSAMunmapped Within " +
                       "--outSAMattributes NH HI AS nM NM MD jM jI MC ch " +
@@ -167,12 +168,36 @@ process samtools {
     cpus 16 
     time '24h' 
     memory '48 GB'
+    clusterOptions '--gres=tmpspace:100G'
 
     // Define input/output as needed
     // ...
 
+    input: 
+        tuple val(sample_id), path(bam)
+
+    output:
+        publishDir "${params.outDir}/star/", mode: 'copy'
+        path("${sample_id}/${sample_id}*")
+
     script:
+    def new_bam= "${bam.name.replaceFirst('.Aligned.out.bam', '.Aligned.sortedByCoord.out.bam')}"
+
+
     """
-    # Your code for Samtools
+    mkdir -p ${sample_id}
+    # Sort BAM
+    samtools sort \
+    -@ 8 \
+    -l 9 \
+    -o "${sample_id}/${new_bam}" \
+    -T "tmp/" \
+    "${bam}"
+
+    # Create mapping statistics with samtools
+    samtools stats -@ 8 "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"
+
+    # Index the bam with samtools
+    samtools index -@ 8 "${sample_id}/${new_bam}" 
     """
 }

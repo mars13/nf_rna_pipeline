@@ -13,4 +13,4 @@
 module load java
 module load nextflow/23.04.4
 
-nextflow run scripts/main.nf -c documentation/params.config -profile slurm
+nextflow run scripts/main.nf -c documentation/params.config -profile slurm -resume
