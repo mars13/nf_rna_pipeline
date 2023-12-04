@@ -1,8 +1,7 @@
 nextflow.enable.dsl = 2
 
-include { trimGalore; checkStrand; indexLength; starAlign; samtools} from './modules/rnaseq_alignment'
-
-
+include { trimGalore; checkStrand } from './modules/qc'
+include { indexLength; starAlign; samtools } from './modules/align'
 
 process getVersions {
     label "rnaseq"
@@ -14,12 +13,7 @@ process getVersions {
         path "versions.txt", emit: versions
     script:
     """
-    apptainer exec -B "/hpc:/hpc" --env "LC_ALL=C.UTF-8" ${container_dir}/trimgalore-0.6.6.sif cutadapt --version >> versions.txt
-    apptainer exec -B "/hpc:/hpc" --env "LC_ALL=C.UTF-8" ${container_dir}/trimgalore-0.6.6.sif fastqc --version >> versions.txt
-    apptainer exec -B "/hpc:/hpc" --env "LC_ALL=C.UTF-8" ${container_dir}/trimgalore-0.6.6.sif trim_galore --version >> versions.txt
-
     """
-    
 }
 
 
@@ -29,7 +23,7 @@ workflow {
 
     reads =  Channel
             .fromFilePairs( params.readsPath, size: params.pairedEnd ? 2 : 1 )
-            .ifEmpty { error "Could not find any reads matching pattern: ${params.readsPath}" }
+            .ifEmpty { "Could not find any reads matching pattern: ${params.readsPath}" }
     // assign R1 and resolve symlinks
     r1 = reads.map { keys, files -> new File(files[0].toString()).canonicalPath } 
     // assign R2 and resolve symlinks
@@ -52,6 +46,9 @@ workflow {
     //write samples file
     reads
     .map { keys, files -> keys }
+    .set { sample_ids }
+
+    sample_ids
     .collectFile(
         name: 'sample_ids.txt',
         storeDir: "${params.projectFolder}/documentation/",
@@ -72,30 +69,37 @@ workflow {
             storeDir: "${params.outDir}/trimgalore/",
             newLine: false, sort: true)
         
-        //Collect trimGalore outputs 
-        trimGalore.out
-        .map({key, file ->
-            tuple( key, 
-                file.findAll({ it =~ /.*(?:R1|R2)_trimmed.*\.fastq\.gz$/ })
-                )
-            }).set{ star_input }
-
         //Run strandedness
-        strandedness = checkStrand(reads, "${params.pairedEnd}")
-        strandedness.map { keys, files -> keys }
+        strandedness = checkStrand(reads, "${params.pairedEnd}").map { keys, files -> keys }
+        strandedness
         .collectFile(
             name: 'strandedness_all.txt',
             storeDir: "${params.outDir}/check_strandedness/",
             newLine: true, sort: true)
+        strandedness.view()
     }   
     
     if (params.align) {
         if (params.qc){
-
+            //Collect trimGalore outputs 
+            trimGalore.out
+            .map({key, file ->
+                tuple( key, 
+                    file.findAll({ it =~ /.*(?:R1|R2)_trimmed.*\.fastq\.gz$/ })
+                    )
+                }).set{ star_input }
         } else {
+            // Look for trimmed reads at the usual location
+            trimmed_reads = "${params.outDir}/trimgalore/**/*{R1,R2}_trimmed*.{fastq.gz,fq.gz}"
+            if (file(trimmed_reads).isEmpty()) {
+                star_input = reads
+                println  "No trimmed reads found in path: ${trimmed_reads}, using ${params.readsPath}"
 
+            } else {
+                star_input = Channel
+                .fromFilePairs("${trimmed_reads}", size: params.pairedEnd ? 2 : 1)   
+            }
 
-        
         }
         starAlign(star_input, "${params.pairedEnd}", indexLength(star_input))
         samtools(starAlign.out.bam)
