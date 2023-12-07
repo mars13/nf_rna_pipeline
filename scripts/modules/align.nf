@@ -94,7 +94,7 @@ process samtools {
 
     output:
         publishDir "${params.outDir}/star/", mode: 'copy'
-        path("${sample_id}/${sample_id}*")
+        tuple val(sample_id), path("${sample_id}/${sample_id}*")
 
     script:
     def new_bam= "${bam.name.replaceFirst('.Aligned.out.bam', '.Aligned.sortedByCoord.out.bam')}"

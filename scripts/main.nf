@@ -1,26 +1,9 @@
-nextflow.enable.dsl = 2
-
-include { trimGalore; checkStrand } from './modules/qc'
-include { indexLength; starAlign; samtools } from './modules/align'
-
-process getVersions {
-    label "rnaseq"
-    cpus 1
-    input:
-        path container_dir
-    output:
-        publishDir "${params.projectFolder}/documentation/", mode: 'copy'
-        path "versions.txt", emit: versions
-    script:
-    """
-    """
-}
+include { rnaseq_alignment } from './subworkflows/rnaseq_alignment'
+include { transcriptome_assembly } from './subworkflows/transcriptome_assembly'
 
 
 workflow {
-    
-    //check params
-
+   // Create reands input channel 
     reads =  Channel
             .fromFilePairs( params.readsPath, size: params.pairedEnd ? 2 : 1 )
             .ifEmpty { "Could not find any reads matching pattern: ${params.readsPath}" }
@@ -54,56 +37,51 @@ workflow {
         storeDir: "${params.projectFolder}/documentation/",
         newLine: true, sort: true)
 
-    //start pipeline
-
-    if (params.qc) {
-        //Run trimGalore
-        trimGalore(reads, "${params.pairedEnd}")
-
-        //Collect trimGalore stats (changed to within trimgalore folder)
-        trimGalore.out.map{key, files -> files }
-        .flatten()
-        .filter(~/.*trim_stats\.txt/)
-        .collectFile(
-            name: 'trim_stats.txt',
-            storeDir: "${params.outDir}/trimgalore/",
-            newLine: false, sort: true)
-        
-        //Run strandedness
-        strandedness = checkStrand(reads, "${params.pairedEnd}").map { keys, files -> keys }
-        strandedness
-        .collectFile(
-            name: 'strandedness_all.txt',
-            storeDir: "${params.outDir}/check_strandedness/",
-            newLine: true, sort: true)
-        strandedness.view()
-    }   
+    // Step 01: Align reads
+    rnaseq_alignment(reads, params.pairedEnd, params.qc, params.align, params.outDir)
     
-    if (params.align) {
-        if (params.qc){
-            //Collect trimGalore outputs 
-            trimGalore.out
-            .map({key, file ->
-                tuple( key, 
-                    file.findAll({ it =~ /.*(?:R1|R2)_trimmed.*\.fastq\.gz$/ })
-                    )
-                }).set{ star_input }
+    strand = rnaseq_alignment.out.strand
+    bam = rnaseq_alignment.out.bam
+
+    // Step 02: Aseemble transcriptome
+
+    //Check if strand info available
+    if (!params.qc && !params.strandInfo) {
+        // Look for strandedness summary file
+        strand_summary = "${params.outDir}/check_strandedness/strandedness_all.txt"
+        if (file(strand_summary).isEmpty()) {
+            println "No strand information found in ${strand_summary}"
+            println "When running with `qc = false`, you can define your strandedness info file as `strandInfo=[path_to_file]` in `params.config`"
+            println "The file is expected to be plain text file (tab separated, no headers) with sample_id and strand information (RF/fr-firststrand, FR/fr-secondstrand, unstranded)."
+
+            exit 1
         } else {
-            // Look for trimmed reads at the usual location
-            trimmed_reads = "${params.outDir}/trimgalore/**/*{R1,R2}_trimmed*.{fastq.gz,fq.gz}"
-            if (file(trimmed_reads).isEmpty()) {
-                star_input = reads
-                println  "No trimmed reads found in path: ${trimmed_reads}, using ${params.readsPath}"
-
-            } else {
-                star_input = Channel
-                .fromFilePairs("${trimmed_reads}", size: params.pairedEnd ? 2 : 1)   
-            }
-
+            Channel.fromPath(strand_summary)
+            .splitText(){ it.trim() }
+            .set { strand }
         }
-        starAlign(star_input, "${params.pairedEnd}", indexLength(star_input))
-        samtools(starAlign.out.bam)
-    }
+    } 
 
+    //Check if strand info available
+        if (!params.align && !params.bamFiles) {
+            // Look for strandedness summary file
+            bamFiles = "${params.outDir}/star/**/*.Aligned.sortedByCoord.out.bam"
+            if (file(bamFiles).isEmpty()) {
+                println "No .bam found in ${bamFiles}"
+                println "When running with `align = false`, you can define your bam location as `bamFiles=[path_to_file]` in `params.config`"
+                println "Please, remember to index your bams. "
+                exit 1
+            } else {
+                Channel.fromFilePairs("${params.outDir}/star/**/*.Aligned.sortedByCoord.out.bam", size: 1, checkIfExists: true)
+                .set { bam }
+
+            }
+        } 
+    //Dev prints
+    strand.view()
+    bam.view()
+
+    //Run transcriptome assembly
+    transcriptome_assembly(strand, bam)
 }
 
