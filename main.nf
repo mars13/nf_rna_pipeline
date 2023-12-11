@@ -48,7 +48,7 @@ workflow {
     // Step 02: Aseemble transcriptome
 
     //Check if strand info available
-    if (!params.sampleGTFlist) {
+    if (!params.sampleGTFList) {
         if (!params.qc && !params.strandInfo) {
             // Look for strandedness summary file
             strand_summary = "${params.outDir}/check_strandedness/strandedness_all.txt"
