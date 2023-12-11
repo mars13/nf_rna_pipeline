@@ -4,8 +4,6 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
 
 ## Overview
 
-This pipeline orchestrates the following main steps:
-
 1. **Quality Control and Adapter Trimming**: Utilizes FastQC for assessing the quality of raw sequencing data and trims adapters and filters low-quality reads using Trimmomatic.
 3. **Alignment**: Aligns processed reads to a reference genome using STAR.
 4. **Transcriptome Assembly**: Assembles transcripts in individual samples with stringtie, merges all samples and checks against a reference with GFFcompare, and finally filters the merged transcriptome.
