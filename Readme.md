@@ -37,7 +37,7 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     - **Reference and other files**: Define paths to reference files, input data, and other settings in `params.config`.
     - **Containers**: Modify process containers in `nextflow.config` for tools like Trimmomatic, STAR, StringTie, etc., as per your environment.
 
-    **Note: to use the pipeline for merginging indivitual samples GTF without prior steps you are require to provide a file containing the paths to indivitual GTFs `sampleGTFList="./stringtie/gtflist.txt"`**
+    **Note: to use the pipeline for merginging individual samples GTF without prior steps you are require to provide a file containing the paths to indivitual GTFs `sampleGTFList="./stringtie/gtflist.txt"`**
 
     ```
     ./analysis/stringtie/sample_01/sample_01.gtf
