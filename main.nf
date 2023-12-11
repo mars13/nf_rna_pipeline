@@ -48,38 +48,40 @@ workflow {
     // Step 02: Aseemble transcriptome
 
     //Check if strand info available
-    if (!params.qc && !params.strandInfo) {
-        // Look for strandedness summary file
-        strand_summary = "${params.outDir}/check_strandedness/strandedness_all.txt"
-        if (file(strand_summary).isEmpty()) {
-            println "No strand information found in ${strand_summary}"
-            println "When running with `qc = false`, you can define your strandedness info file as `strandInfo=[path_to_file]` in `params.config`"
-            println "The file is expected to be plain text file (tab separated, no headers) with sample_id and strand information (RF/fr-firststrand, FR/fr-secondstrand, unstranded)."
-
-            exit 1
-        } else {
-            Channel.fromPath(strand_summary)
-            .splitText(){ it.trim() }
-            .set { strand }
-        }
-    } 
-
-    //Check if strand info available
-        if (!params.align && !params.bamFiles) {
+    if (!params.sampleGTFlist) {
+        if (!params.qc && !params.strandInfo) {
             // Look for strandedness summary file
-            bamFiles = "${params.outDir}/star/**/*.Aligned.sortedByCoord.out.bam"
-            if (file(bamFiles).isEmpty()) {
-                println "No .bam found in ${bamFiles}"
-                println "When running with `align = false`, you can define your bam location as `bamFiles=[path_to_file]` in `params.config`"
-                println "Please, remember to index your bams. "
+            strand_summary = "${params.outDir}/check_strandedness/strandedness_all.txt"
+            if (file(strand_summary).isEmpty()) {
+                println "No strand information found in ${strand_summary}"
+                println "When running with `qc = false`, you can define your strandedness info file as `strandInfo=[path_to_file]` in `params.config`"
+                println "The file is expected to be plain text file (tab separated, no headers) with sample_id and strand information (RF/fr-firststrand, FR/fr-secondstrand, unstranded)."
+
                 exit 1
             } else {
-                Channel.fromFilePairs("${params.outDir}/star/**/*.Aligned.sortedByCoord.out.bam", size: 1, checkIfExists: true)
-                .set { bam }
-
+                Channel.fromPath(strand_summary)
+                .splitText(){ it.trim() }
+                .set { strand }
             }
         } 
 
+        //Check if strand info available
+            if (!params.align && !params.bamFiles) {
+                // Look for strandedness summary file
+                bamFiles = "${params.outDir}/star/**/*.Aligned.sortedByCoord.out.bam"
+                if (file(bamFiles).isEmpty()) {
+                    println "No .bam found in ${bamFiles}"
+                    println "When running with `align = false`, you can define your bam location as `bamFiles=[path_to_file]` in `params.config`"
+                    println "Please, remember to index your bams. "
+                    exit 1
+                } else {
+                    Channel.fromFilePairs("${params.outDir}/star/**/*.Aligned.sortedByCoord.out.bam", size: 1, checkIfExists: true)
+                    .set { bam }
+
+                }
+            } 
+    }
+    
     //Run transcriptome assembly
     transcriptome_assembly(strand, bam)
 }
