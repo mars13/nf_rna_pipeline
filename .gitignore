@@ -2,7 +2,7 @@
 !.gitignore
 !README.md
 
-# Ignore all files named .DS_Store or ending with .log
+# Ignore all files named .DS_Store and log files
 **/.DS_Store
 **/._*
 **.log

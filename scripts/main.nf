@@ -1,8 +1,10 @@
+include { printStartLogs } from "./modules/helperFunctions.nf"
 include { rnaseq_alignment } from './subworkflows/rnaseq_alignment'
 include { transcriptome_assembly } from './subworkflows/transcriptome_assembly'
 
 
 workflow {
+    printStartLogs()
    // Create reands input channel 
     reads =  Channel
             .fromFilePairs( params.readsPath, size: params.pairedEnd ? 2 : 1 )
@@ -77,9 +79,6 @@ workflow {
 
             }
         } 
-    //Dev prints
-    strand.view()
-    bam.view()
 
     //Run transcriptome assembly
     transcriptome_assembly(strand, bam)

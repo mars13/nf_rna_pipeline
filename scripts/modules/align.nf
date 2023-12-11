@@ -102,6 +102,7 @@ process samtools {
 
     """
     mkdir -p ${sample_id}
+    mkdir -p tmp/
     # Sort BAM
     samtools sort \
     -@ 8 \
@@ -109,6 +110,8 @@ process samtools {
     -o "${sample_id}/${new_bam}" \
     -T "tmp/" \
     "${bam}"
+
+    rm -r tmp/
 
     # Create mapping statistics with samtools
     samtools stats -@ 8 "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"

@@ -1,9 +1,9 @@
 // Define process for GTF merging
 process mergeGTF {
     label "assembly"
-    cpus 4 
+    cpus 2 //change to 4
     time '24h' 
-    memory '48 GB' 
+    memory '10 GB' //change 48
 
     input: 
         path(gtf_list)
@@ -32,19 +32,30 @@ process filterAnnotate {
     label "assembly"
     cpus 2
     time '24h' 
-    memory '24 GB' 
+    memory '10 GB' //change to 24
 
     input: 
-        tuple val(sample_id), path(reads)
-        val(pairedEnd)
+        path(gtf_novel)
+        path(gtf_tracking)
+        val(min_occurrence)
+
     
     output:
-        publishDir "${params.outDir}", mode: 'copy'
-        tuple val("${sample_id}"), path("trimgalore/${sample_id}/*")
+        publishDir "${params.outDir}/customannotation/", mode: 'copy'
+        path("**${params.mergedGTFbasename}*")
 
 
     script:
     """
+    mkdir -p plots
+    filter_annotate.R \
+    "${params.referenceGTF}" \
+    "${params.refseqGTF}" \
+    "${gtf_novel}" \
+    "${gtf_tracking}" \
+    "${min_occurrence}" \
+    "${params.mergedGTFbasename}"_novel_filtered.gtf
+
     """
 }
 

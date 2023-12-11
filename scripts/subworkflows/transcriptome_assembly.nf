@@ -1,5 +1,5 @@
 include { stringtie } from '../modules/sampleGTF'
-include { mergeGTF } from '../modules/mergeTranscriptome'
+include { mergeGTF; filterAnnotate } from '../modules/mergeTranscriptome'
 
 def getStrandtype(strand) {
         if (strand ==~ /.*RF\/fr-firststrand/) {
@@ -19,7 +19,7 @@ workflow transcriptome_assembly {
 
     main:
         //set strand
-        strand.map{ it -> getStrandtype(it) }.view().set{ strand }
+        strand.map{ it -> getStrandtype(it) }.set{ strand }
         
         //locate chromosome exclusion list
         if(params.chrExclusionList) {
@@ -43,10 +43,20 @@ workflow transcriptome_assembly {
         } else {
             gtf_list = Channel.fromPath("${params.sampleGTFList}")
         }
-        gtf_list.view()
+
         if (merge) {
+
             mergeGTF(gtf_list)
             mergeGTF.out.view()
+
+            gtf_novel = mergeGTF.out.flatten().filter(~/.*\.combined\.gtf/)
+            gtf_tracking = mergeGTF.out.flatten().filter(~/.*\.tracking/)
+
+            gtf_novel.view()
+            gtf_tracking.view()
+
+            filterAnnotate(gtf_novel, gtf_tracking, 1)
+            filterAnnotate.out.view()
         }
 
 
