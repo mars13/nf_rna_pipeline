@@ -53,10 +53,8 @@ workflow transcriptome_assembly {
             gtf_tracking = mergeGTF.out.flatten().filter(~/.*\.tracking/)
 
             gtf_novel.view()
-            gtf_tracking.view()
 
             filterAnnotate(gtf_novel, gtf_tracking, 1)
-            filterAnnotate.out.view()
         }
 
 

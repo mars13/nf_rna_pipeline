@@ -68,7 +68,3 @@ The pipeline generates output files including quality reports, trimmed reads, al
 
 - For issues or questions, [create an issue](https://github.com/mars13/nf_rna_pipeline/issues).
 - Contributions to enhance this pipeline are welcomed through pull requests.
-
-## License
-
-This pipeline is licensed under [MIT License](LICENSE).
