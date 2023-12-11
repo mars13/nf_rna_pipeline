@@ -18,19 +18,19 @@ workflow transcriptome_assembly {
         bam
 
     main:
-        //set strand
-        strand.map{ it -> getStrandtype(it) }.set{ strand }
-        
-        //locate chromosome exclusion list
-        if(params.chrExclusionList) {
-            chromosome_exclusion_list = file(params.chrExclusionList)
-                                        .readLines().join(",")
-        } else {
-            chromosome_exclusion_list = null
-        }
-        
         //Run stringtie unless paths to precomputed individual sample GTF are provided
         if (!params.sampleGTFList) {
+             //set strand
+            strand.map{ it -> getStrandtype(it) }.set{ strand }
+            
+            //locate chromosome exclusion list
+            if(params.chrExclusionList) {
+                chromosome_exclusion_list = file(params.chrExclusionList)
+                                            .readLines().join(",")
+            } else {
+                chromosome_exclusion_list = null
+            }
+        
             stringtie(strand, bam, chromosome_exclusion_list)
             
             stringtie.out
@@ -42,17 +42,18 @@ workflow transcriptome_assembly {
             .set { gtf_list }
         } else {
             gtf_list = Channel.fromPath("${params.sampleGTFList}")
+            gtf_list
+            .splitText(){ it.trim() }
+            .take(1)
+            .ifEmpty { error "Could not find sample GTF files in: ${params.sampleGTFList}" }
         }
 
-        if (merge) {
+        if (params.merge) {
 
             mergeGTF(gtf_list)
-            mergeGTF.out.view()
 
             gtf_novel = mergeGTF.out.flatten().filter(~/.*\.combined\.gtf/)
             gtf_tracking = mergeGTF.out.flatten().filter(~/.*\.tracking/)
-
-            gtf_novel.view()
 
             filterAnnotate(gtf_novel, gtf_tracking, 1)
         }

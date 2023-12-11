@@ -8,6 +8,7 @@
 **/._*
 **.log
 **.out
+log/*
 
 # Ignore files from analysis, results, data and log
 test/data/*

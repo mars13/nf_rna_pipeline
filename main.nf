@@ -8,7 +8,7 @@ workflow {
    // Create reands input channel 
     reads =  Channel
             .fromFilePairs( params.readsPath, size: params.pairedEnd ? 2 : 1 )
-            .ifEmpty { "Could not find any reads matching pattern: ${params.readsPath}" }
+            .ifEmpty { error "Could not find any reads matching pattern: ${params.readsPath}" }
     // assign R1 and resolve symlinks
     r1 = reads.map { keys, files -> new File(files[0].toString()).canonicalPath } 
     // assign R2 and resolve symlinks
@@ -46,9 +46,12 @@ workflow {
     bam = rnaseq_alignment.out.bam
 
     // Step 02: Aseemble transcriptome
-
-    //Check if strand info available
-    if (!params.sampleGTFList) {
+    //Check if pre-computed sample GTFs are available 
+    if ( params.sampleGTFList) {
+        strand = null
+        bam = null
+    } else {
+        //Check if strand info available
         if (!params.qc && !params.strandInfo) {
             // Look for strandedness summary file
             strand_summary = "${params.outDir}/check_strandedness/strandedness_all.txt"
@@ -81,7 +84,7 @@ workflow {
                 }
             } 
     }
-    
+
     //Run transcriptome assembly
     transcriptome_assembly(strand, bam)
 }
