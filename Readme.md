@@ -50,6 +50,7 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     nextflow run main.nf -c params.config
     ```
 
+    Additional nextflow run options can be provided. See [nextflow docs](https://www.nextflow.io/docs/latest/cli.html#run) for more information.
 ## Output
 
 The pipeline generates output files including quality reports, trimmed reads, alignment results and assembled transcripts. The output directory is specified by the parameter `outdir` and has the following structure:
