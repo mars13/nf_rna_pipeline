@@ -10,18 +10,12 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
 
 ## Usage
 
-1. **Clone the Repository**:
-
-    ```bash
-    git clone https://github.com/mars13/nf_rna_pipeline.git
-    cd nf_rna_pipeline
-    ```
-
-2. **Configure Parameters**:
+1. **Configure Parameters**:
     
     Customize the parameters using the `params.config` file to suit your analysis.
 
-    - **Inputs**: It accepts input reads (`readsPath`) and parameters specified in `params.config`.Channels are created for the input reads and processed to handle paired-end (single-end to be added as a future feature).
+    - **Inputs**: It accepts input reads (`readsPath`) and parameters specified in `params.config`. See an example [here](https://github.com/mars13/nf_rna_pipeline/blob/main/test/documentation/params.config). Channels are created for the input reads and processed to handle paired-end (single-end to be added as a future feature).
+
     - **Steps**: Adjust settings in `params.config` to toggle pipeline steps (`qc`, `align`, `assembly`, `merge`).
     
     ```
@@ -44,25 +38,40 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     ./analysis/stringtie/sample_02/sample_02.gtf
     ```
 
-3. **Run the Pipeline**:
+2. **Run the Pipeline**:
 
     ```bash
-    nextflow run main.nf -c params.config
+    nextflow run mars13/nf_rna_pipeline -c params.config -profile [local/slurm]
     ```
 
     Additional nextflow run options can be provided. See [nextflow docs](https://www.nextflow.io/docs/latest/cli.html#run) for more information.
+
+
+3. **Pull repository**:
+    To keep up with the latest version pull the repository if it has already been downloaded.
+
+    ```bash
+    nextflow pull mars13/nf_rna_pipeline
+    ```
+
 ## Output
 
-The pipeline generates output files including quality reports, trimmed reads, alignment results and assembled transcripts. The output directory is specified by the parameter `outdir` and has the following structure:
+The pipeline generates output files including quality reports, trimmed reads, alignment results and assembled transcripts. The output directory is specified by the parameter `outDir` and has the following structure:
 
 ```
-    check_strandedness/
-    customannotation/
-    gffcompare/
-    star/
-    stringtie/
-    trimgalore/
+{outDir}
+├── check_strandedness/
+├── customannotation/
+├── gffcompare/
+├── star/
+├── stringtie/
+└── trimgalore/
 ```
+
+Additionally it produces:
+
+- `r1_files.txt`, `r2_files.txt` and `sample_ids.txt` in `{projectFolder}/documentation`
+- Nextflow execution reports in `{projectFolder}/log`
 
 ## Support and Contributions
 
