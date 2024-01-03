@@ -14,7 +14,7 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     
     Customize the parameters using the `params.config` file to suit your analysis.
 
-    - **Inputs**: Parameters are specified in `params.config`. See an example [here](https://github.com/mars13/nf_rna_pipeline/blob/main/test/documentation/params.config). Alternatively, they can be provided as command-line arguments if double-dashed (`--reads_path`). A detailed description of the required inputs can be found in the [Inputs](##inputs) section.
+    - **Inputs**: Parameters are specified in `params.config`. See an example [here](https://github.com/mars13/nf_rna_pipeline/blob/main/test/documentation/params.config). Alternatively, they can be provided as command-line arguments if double-dashed (`--reads_path`). A detailed description of the required inputs can be found in the [Inputs](#inputs) section.
 
     - **Steps**: Adjust settings in `params.config` to toggle pipeline steps (`qc`, `align`, `assembly`, `merge`).
     
