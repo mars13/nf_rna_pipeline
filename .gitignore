@@ -21,4 +21,5 @@ test/scripts/*
 #Ignore nextflow work and logs
 work/*
 .nextflow.*
+.nfs*
 .nextflow/
