@@ -14,7 +14,7 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     
     Customize the parameters using the `params.config` file to suit your analysis.
 
-    - **Inputs**: It accepts input reads (`reads_path`) and parameters specified in `params.config`. See an example [here](https://github.com/mars13/nf_rna_pipeline/blob/main/test/documentation/params.config). Channels are created for the input reads and processed to handle paired-end (single-end to be added as a future feature).
+    - **Inputs**: Parameters are specified in `params.config`. See an example [here](https://github.com/mars13/nf_rna_pipeline/blob/main/test/documentation/params.config). Alternatively, they can be provided as command-line arguments if double-dashed (`--reads_path`). A detailed description of the required inputs can be found in the [Inputs](##inputs) section.
 
     - **Steps**: Adjust settings in `params.config` to toggle pipeline steps (`qc`, `align`, `assembly`, `merge`).
     
@@ -31,13 +31,6 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     - **Reference and other files**: Define paths to reference files, input data, and other settings in `params.config`.
     - **Containers**: Modify process containers in `nextflow.config` for tools like Trimmomatic, STAR, StringTie, etc., as per your environment.
 
-    **Note: to use the pipeline for merginging individual samples GTF without prior steps you are require to provide a file containing the paths to indivitual GTFs `sample_gtf_list="./stringtie/gtflist.txt"`**
-
-    ```
-    ./analysis/stringtie/sample_01/sample_01.gtf
-    ./analysis/stringtie/sample_02/sample_02.gtf
-    ```
-
 2. **Run the Pipeline**:
 
     ```bash
@@ -45,6 +38,13 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     ```
 
     Additional nextflow run options can be provided. See [nextflow docs](https://www.nextflow.io/docs/latest/cli.html#run) for more information.
+
+    Add or overwrite params in the config files with double dashed arguments:
+    
+    ```bash
+    nextflow run mars13/nf_rna_pipeline --align false --bam_files precomputed_aligment/**.Aligned.sortedByCoord.out.bam -c params.config -profile [local/slurm]
+    ```
+
 
 
 3. **Pull repository**:
@@ -54,7 +54,38 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     nextflow pull mars13/nf_rna_pipeline
     ```
 
-## Output
+## Inputs
+
+### Required inputs
+
+**General inputs**:
+- `reads_path`: regular expression pointing to the reads location in `.fastq.gz` or `.fq.gz` extension. Example: "project_dir/data/*_{R1,R2}*.{fastq.gz,fq.gz}"
+- `reference_gtf`: path to reference gtf.
+
+**QC inputs**:
+- `kallisto_index`: path to precomputed kallisto index. 
+
+**Align inputs**:
+- `star_index_basedir`: path to precomputed STAR index base directory. 
+
+**Merge inputs**:
+- `masked_fasta`: Masked fasta file for GFFcompare.
+- `refseq_gtf`: Refseq GTF used in the filtering step.
+
+### Optional inputs
+
+- `strand_info`: When not running the qc step, the path to the file containing strand information for each sample can be provided. The file is expected to be plain text file (tab separated, no headers) with two columns: sample_id and strand information (RF/fr-firststrand, FR/fr-secondstrand, unstranded). If `strand_info` is not provided the software will check the default location: `"${outdir}/check_strandedness/strandedness_all.txt"`.
+- `bam_files`: When not running the alignment step before assembly, the path to bam files can be provided as a regular expression. If `bam_files` is not provided the software will check the default location: `"${outdir}/star/**/*.Aligned.sortedByCoord.out.bam"`.
+- `sample_gtf_list`: For merginging GTF files from individual samples without prior assembly steps, you are require to provide a file containing the paths to individual GTFs. Example:
+
+```
+./analysis/stringtie/sample_01/sample_01.gtf
+./analysis/stringtie/sample_02/sample_02.gtf
+```
+
+
+
+## Outputs
 
 The pipeline generates output files including quality reports, trimmed reads, alignment results and assembled transcripts. The output directory is specified by the parameter `outdir` and has the following structure:
 
