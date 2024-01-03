@@ -9,20 +9,20 @@ process mergeGTF {
         path(gtf_list)
     
     output:
-        publishDir "${params.outDir}/gffcompare", mode: 'copy'
-        path("${params.mergedGTFbasename}/${params.mergedGTFbasename}*")
+        publishDir "${params.outdir}/gffcompare", mode: 'copy'
+        path("${params.merged_gtf_basename}/${params.merged_gtf_basename}*")
 
     when:
         gtf_list.exists()
 
     script:
     """
-    mkdir -p ${params.mergedGTFbasename}
+    mkdir -p ${params.merged_gtf_basename}
     gffcompare \
         -V \
-        -r "${params.referenceGTF}" \
-        -s ${params.maskedFasta} \
-        -o "${params.mergedGTFbasename}/${params.mergedGTFbasename}" \
+        -r "${params.reference_gtf}" \
+        -s ${params.masked_fasta} \
+        -o "${params.merged_gtf_basename}/${params.merged_gtf_basename}" \
         -i "${gtf_list}"    
     """
 }
@@ -41,20 +41,20 @@ process filterAnnotate {
 
     
     output:
-        publishDir "${params.outDir}/customannotation/", mode: 'copy'
-        path("**${params.mergedGTFbasename}*")
+        publishDir "${params.outdir}/customannotation/", mode: 'copy'
+        path("**${params.merged_gtf_basename}*")
 
 
     script:
     """
     mkdir -p plots
     filter_annotate.R \
-    "${params.referenceGTF}" \
-    "${params.refseqGTF}" \
+    "${params.reference_gtf}" \
+    "${params.refseq_gtf}" \
     "${gtf_novel}" \
     "${gtf_tracking}" \
     "${min_occurrence}" \
-    "${params.mergedGTFbasename}"_novel_filtered.gtf
+    "${params.merged_gtf_basename}"_novel_filtered.gtf
 
     """
 }
@@ -70,10 +70,10 @@ process customAnotation {
 
     input: 
         tuple val(sample_id), path(reads)
-        val(pairedEnd)
+        val(paired_end)
     
     output:
-        publishDir "${params.outDir}", mode: 'copy'
+        publishDir "${params.outdir}", mode: 'copy'
         tuple val("${sample_id}"), path("trimgalore/${sample_id}/*")
 
 

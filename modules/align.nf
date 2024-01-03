@@ -46,11 +46,11 @@ process starAlign {
     // Define input/output as needed
     input: 
         tuple val(sample_id), path(reads)
-        val(pairedEnd)
+        val(paired_end)
         val(usedIndex)
 
     output:
-        publishDir "${params.outDir}/star/", mode: 'copy', pattern: "${sample_id}/${sample_id}*.out"    //fix to add .out.tab
+        publishDir "${params.outdir}/star/", mode: 'copy', pattern: "${sample_id}/${sample_id}*.out"    //fix to add .out.tab
         path("${sample_id}/${sample_id}.*"), emit: files
         tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
 
@@ -65,11 +65,11 @@ process starAlign {
                       "--alignSJoverhangMin 10 --outFilterMultimapNmax 10 " +
                       "--outFilterScoreMinOverLread 0.75"
     
-    if (pairedEnd == true){
+    if (paired_end == true){
         """
         # Use STAR for mapping the reads
-        STAR --genomeDir "${params.starIndexBasedir}/${usedIndex}nt" \
-        --sjdbGTFfile ${params.referenceGTF} \
+        STAR --genomeDir "${params.star_index_basedir}/${usedIndex}nt" \
+        --sjdbGTFfile ${params.reference_gtf} \
         --readFilesIn "${reads[0]}" "${reads[1]}" \
         --outSAMattrRGline ID:${sample_id} LB:${sample_id} PL:IllUMINA SM:${sample_id} \
         --outFileNamePrefix "${sample_id}/${sample_id}." \
@@ -77,6 +77,8 @@ process starAlign {
         """
     } else {
         println "STAR does not currently support single end reads"
+        //TODO add single end commands
+
     }
 }
 
@@ -93,7 +95,7 @@ process samtools {
         tuple val(sample_id), path(bam)
 
     output:
-        publishDir "${params.outDir}/star/", mode: 'copy'
+        publishDir "${params.outdir}/star/", mode: 'copy'
         tuple val(sample_id), path("${sample_id}/${sample_id}*")
 
     script:

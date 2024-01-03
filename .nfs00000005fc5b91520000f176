@@ -1,0 +1,92 @@
+Jan-03 11:57:47.447 [main] DEBUG nextflow.cli.Launcher - $> nextflow run main.nf --qc false --align false --assembly false -c test/documentation/params.config -profile local
+Jan-03 11:57:48.452 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 23.04.4
+Jan-03 11:57:48.534 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; embedded=false; plugins-dir=/hpc/pmc_vanheesch/projects/Marina/nxf_home/plugins; core-plugins: nf-amazon@1.16.2,nf-azure@1.0.1,nf-codecommit@0.1.4,nf-console@1.0.5,nf-ga4gh@1.0.5,nf-google@1.7.3-patch1,nf-tower@1.5.12,nf-wave@0.8.4
+Jan-03 11:57:48.558 [main] INFO  org.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+Jan-03 11:57:48.560 [main] INFO  org.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+Jan-03 11:57:48.564 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.4.1 in 'deployment' mode
+Jan-03 11:57:48.610 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+Jan-03 11:57:48.663 [main] DEBUG nextflow.config.ConfigBuilder - Found config local: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/nextflow.config
+Jan-03 11:57:48.675 [main] DEBUG nextflow.config.ConfigBuilder - User config file: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/documentation/params.config
+Jan-03 11:57:48.675 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/nextflow.config
+Jan-03 11:57:48.676 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/documentation/params.config
+Jan-03 11:57:48.744 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `local`
+Jan-03 11:57:50.585 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `local`
+Jan-03 11:57:50.891 [main] DEBUG nextflow.config.ConfigBuilder - Available config profiles: [slurm, local]
+Jan-03 11:57:51.325 [main] DEBUG nextflow.cli.CmdRun - Applied DSL=2 by global default
+Jan-03 11:57:52.291 [main] INFO  nextflow.cli.CmdRun - Launching `main.nf` [hopeful_lattes] DSL2 - revision: 2532fee530
+Jan-03 11:57:52.292 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins default=[]
+Jan-03 11:57:52.292 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins resolved requirement=[]
+Jan-03 11:57:52.316 [main] DEBUG nextflow.secret.LocalSecretsProvider - Secrets store: /hpc/pmc_vanheesch/projects/Marina/nxf_home/secrets/store.json
+Jan-03 11:57:52.325 [main] DEBUG nextflow.secret.SecretsLoader - Discovered secrets providers: [nextflow.secret.LocalSecretsProvider@340a8894] - activable => nextflow.secret.LocalSecretsProvider@340a8894
+Jan-03 11:57:52.473 [main] DEBUG nextflow.Session - Session UUID: c852d0a0-fad2-42ea-a6a7-51e42b6c4ef3
+Jan-03 11:57:52.473 [main] DEBUG nextflow.Session - Run name: hopeful_lattes
+Jan-03 11:57:52.474 [main] DEBUG nextflow.Session - Executor pool size: 2
+Jan-03 11:57:52.499 [main] DEBUG nextflow.util.ThreadPoolBuilder - Creating thread pool 'FileTransfer' minSize=10; maxSize=10; workQueue=LinkedBlockingQueue[10000]; allowCoreThreadTimeout=false
+Jan-03 11:57:52.565 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 23.04.4 build 5881
+  Created: 25-09-2023 15:34 UTC (17:34 CEST)
+  System: Linux 4.18.0-477.27.1.el8_8.x86_64
+  Runtime: Groovy 3.0.16 on Java HotSpot(TM) 64-Bit Server VM 17.0.8+9-LTS-211
+  Encoding: UTF-8 (ANSI_X3.4-1968)
+  Process: 182209@n0061.manage.hpc [10.100.2.61]
+  CPUs: 2 - Mem: 10 GB (9.7 GB) - Swap: 0 (0)
+Jan-03 11:57:52.655 [main] DEBUG nextflow.Session - Work-dir: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/work [nfs]
+Jan-03 11:57:52.686 [main] DEBUG nextflow.executor.ExecutorFactory - Extension executors providers=[]
+Jan-03 11:57:52.707 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Jan-03 11:57:52.781 [main] DEBUG nextflow.cache.CacheFactory - Using Nextflow cache factory: nextflow.cache.DefaultCacheFactory
+Jan-03 11:57:52.834 [main] DEBUG nextflow.util.CustomThreadPool - Creating default thread pool > poolSize: 3; maxThreads: 1000
+Jan-03 11:57:54.250 [main] DEBUG nextflow.Session - Session start
+Jan-03 11:57:54.262 [main] DEBUG nextflow.trace.TraceFileObserver - Workflow started -- trace file: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/log/trace.txt
+Jan-03 11:57:55.338 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Jan-03 11:57:57.986 [main] INFO  nextflow.Nextflow - 
+.-------------------------------------------------------.
+|                _____                 _      _     _   |
+| _ _ ___ ___   |  |  |___ ___ ___ ___| |_   | |___| |_ |
+|| | | .'|   |  |     | -_| -_|_ -|  _|   |  | | .'| . ||
+| \_/|__,|_|_|  |__|__|___|___|___|___|_|_|  |_|__,|___||
+'-------------------------------------------------------'
+
+mars13/nf_rna_pipeline v0.1
+==========================
+run as       : nextflow run main.nf --qc false --align false --assembly false -c test/documentation/params.config -profile local
+started at   : 2024-01-03T11:57:52.738252228+01:00
+config files : [/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/nextflow.config, /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/documentation/params.config]
+--
+project folder   : /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test
+input from       : /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/*_{R1,R2}*.{fastq.gz,fq.gz}
+output to        : /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/analysis/
+reference files  : /hpc/pmc_vanheesch/shared_resources/GENOMES/Homo_sapiens.GRCh38/102/
+sample gtf list  : /hpc/pmc_vanheesch/projects/Marina/20230928_Spain_Breast_Liver/breast/analysis/stringtie/gtfmergefile.txt
+--
+qc         : false
+align      : false
+assembly   : false
+merge      : true
+==========================
+
+Jan-03 11:57:58.373 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:mergeGTF` matches process transcriptome_assembly:mergeGTF
+Jan-03 11:57:58.382 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jan-03 11:57:58.382 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jan-03 11:57:58.394 [main] DEBUG nextflow.executor.Executor - [warm up] executor > local
+Jan-03 11:57:58.405 [main] DEBUG n.processor.LocalPollingMonitor - Creating local task monitor for executor 'local' > cpus=2; memory=10 GB; capacity=2; pollInterval=100ms; dumpInterval=5m
+Jan-03 11:57:58.636 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:filterAnnotate` matches process transcriptome_assembly:filterAnnotate
+Jan-03 11:57:58.638 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: local
+Jan-03 11:57:58.638 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jan-03 11:57:58.654 [main] DEBUG nextflow.Session - Workflow process names [dsl2]: transcriptome_assembly:filterAnnotate, starAlign, indexLength, samtools, trimGalore, filterAnnotate, customAnotation, stringtie, mergeGTF, transcriptome_assembly:mergeGTF, checkStrand
+Jan-03 11:57:58.656 [main] DEBUG nextflow.Session - Igniting dataflow network (4)
+Jan-03 11:57:58.666 [PathVisitor-1] DEBUG nextflow.file.PathVisitor - files for syntax: glob; folder: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/; pattern: *_{R1,R2}*.{fastq.gz,fq.gz}; options: [checkIfExists:true]
+Jan-03 11:57:58.678 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > transcriptome_assembly:mergeGTF
+Jan-03 11:57:58.679 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > transcriptome_assembly:filterAnnotate
+Jan-03 11:57:58.679 [main] DEBUG nextflow.script.ScriptRunner - > Awaiting termination 
+Jan-03 11:57:58.679 [main] DEBUG nextflow.Session - Session await
+Jan-03 11:57:59.302 [Actor Thread 9] DEBUG nextflow.sort.BigSort - Sort completed -- entries: 2; slices: 1; internal sort time: 0.031 s; external sort time: 0.002 s; total time: 0.033 s
+Jan-03 11:57:59.303 [Actor Thread 10] DEBUG nextflow.sort.BigSort - Sort completed -- entries: 2; slices: 1; internal sort time: 0.037 s; external sort time: 0.001 s; total time: 0.038 s
+Jan-03 11:57:59.306 [Actor Thread 8] DEBUG nextflow.sort.BigSort - Sort completed -- entries: 2; slices: 1; internal sort time: 0.041 s; external sort time: 0.001 s; total time: 0.042 s
+Jan-03 11:57:59.312 [Task submitter] DEBUG n.executor.local.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jan-03 11:57:59.321 [Task submitter] INFO  nextflow.Session - [f7/eec24e] Submitted process > transcriptome_assembly:mergeGTF (1)
+Jan-03 11:57:59.340 [Actor Thread 9] DEBUG nextflow.file.FileCollector - Saved collect-files list to: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/work/collect-file/c3bb86aca60921cdbff31e681404bb78
+Jan-03 11:57:59.349 [Actor Thread 10] DEBUG nextflow.file.FileCollector - Saved collect-files list to: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/work/collect-file/f270700830eba338e29ca26cb4e037a2
+Jan-03 11:57:59.354 [Actor Thread 8] DEBUG nextflow.file.FileCollector - Saved collect-files list to: /hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/work/collect-file/170096c5a34497a4e71f9b57e79a9207
+Jan-03 11:57:59.360 [Actor Thread 10] DEBUG nextflow.file.FileCollector - Deleting file collector temp dir: /scratch/13097917/nxf-6283757875651554549
+Jan-03 11:57:59.363 [Actor Thread 9] DEBUG nextflow.file.FileCollector - Deleting file collector temp dir: /scratch/13097917/nxf-4836645179767781091
+Jan-03 11:57:59.368 [Actor Thread 8] DEBUG nextflow.file.FileCollector - Deleting file collector temp dir: /scratch/13097917/nxf-56152576630822368

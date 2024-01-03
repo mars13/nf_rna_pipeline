@@ -13,7 +13,7 @@ process stringtie {
         val(chr)
     
     output:
-        publishDir "${params.outDir}/stringtie", mode: 'copy'
+        publishDir "${params.outdir}/stringtie", mode: 'copy'
         path("${sample_id}/${sample_id}.gtf")
 
 
@@ -22,7 +22,7 @@ process stringtie {
 
     """
         stringtie ${bam[0]} \
-            -G ${params.referenceGTF} \
+            -G ${params.reference_gtf} \
             --${strand} \
             -M 0.45 \
             -a 9 \

@@ -19,13 +19,13 @@ workflow transcriptome_assembly {
 
     main:
         //Run stringtie unless paths to precomputed individual sample GTF are provided
-        if (!params.sampleGTFList) {
+        if (!params.sample_gtf_list) {
              //set strand
             strand.map{ it -> getStrandtype(it) }.set{ strand }
             
             //locate chromosome exclusion list
-            if(params.chrExclusionList) {
-                chromosome_exclusion_list = file(params.chrExclusionList)
+            if(params.chr_exclusion_list) {
+                chromosome_exclusion_list = file(params.chr_exclusion_list)
                                             .readLines().join(",")
             } else {
                 chromosome_exclusion_list = null
@@ -37,15 +37,15 @@ workflow transcriptome_assembly {
             .map { it -> it.toString() }
             .collectFile(
                 name: 'gtflist.txt',
-                storeDir: "${params.outDir}/stringtie/",
+                storeDir: "${params.outdir}/stringtie/",
                 newLine: true, sort: true)
             .set { gtf_list }
         } else {
-            gtf_list = Channel.fromPath("${params.sampleGTFList}")
+            gtf_list = Channel.fromPath("${params.sample_gtf_list}")
             gtf_list
             .splitText(){ it.trim() }
             .take(1)
-            .ifEmpty { error "Could not find sample GTF files in: ${params.sampleGTFList}" }
+            .ifEmpty { error "Could not find sample GTF files in: ${params.sample_gtf_list}" }
         }
 
         if (params.merge) {
@@ -58,6 +58,6 @@ workflow transcriptome_assembly {
             filterAnnotate(gtf_novel, gtf_tracking, 1)
         }
 
-
-
+        //TODO create customannotation files
+        
 }

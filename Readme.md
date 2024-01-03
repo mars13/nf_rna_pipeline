@@ -14,7 +14,7 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     
     Customize the parameters using the `params.config` file to suit your analysis.
 
-    - **Inputs**: It accepts input reads (`readsPath`) and parameters specified in `params.config`. See an example [here](https://github.com/mars13/nf_rna_pipeline/blob/main/test/documentation/params.config). Channels are created for the input reads and processed to handle paired-end (single-end to be added as a future feature).
+    - **Inputs**: It accepts input reads (`reads_path`) and parameters specified in `params.config`. See an example [here](https://github.com/mars13/nf_rna_pipeline/blob/main/test/documentation/params.config). Channels are created for the input reads and processed to handle paired-end (single-end to be added as a future feature).
 
     - **Steps**: Adjust settings in `params.config` to toggle pipeline steps (`qc`, `align`, `assembly`, `merge`).
     
@@ -31,7 +31,7 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
     - **Reference and other files**: Define paths to reference files, input data, and other settings in `params.config`.
     - **Containers**: Modify process containers in `nextflow.config` for tools like Trimmomatic, STAR, StringTie, etc., as per your environment.
 
-    **Note: to use the pipeline for merginging individual samples GTF without prior steps you are require to provide a file containing the paths to indivitual GTFs `sampleGTFList="./stringtie/gtflist.txt"`**
+    **Note: to use the pipeline for merginging individual samples GTF without prior steps you are require to provide a file containing the paths to indivitual GTFs `sample_gtf_list="./stringtie/gtflist.txt"`**
 
     ```
     ./analysis/stringtie/sample_01/sample_01.gtf
@@ -56,10 +56,10 @@ This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including 
 
 ## Output
 
-The pipeline generates output files including quality reports, trimmed reads, alignment results and assembled transcripts. The output directory is specified by the parameter `outDir` and has the following structure:
+The pipeline generates output files including quality reports, trimmed reads, alignment results and assembled transcripts. The output directory is specified by the parameter `outdir` and has the following structure:
 
 ```
-{outDir}
+{outdir}
 ├── check_strandedness/
 ├── customannotation/
 ├── gffcompare/
@@ -70,8 +70,8 @@ The pipeline generates output files including quality reports, trimmed reads, al
 
 Additionally it produces:
 
-- `r1_files.txt`, `r2_files.txt` and `sample_ids.txt` in `{projectFolder}/documentation`
-- Nextflow execution reports in `{projectFolder}/log`
+- `r1_files.txt`, `r2_files.txt` and `sample_ids.txt` in `{project_folder}/documentation`
+- Nextflow execution reports in `{project_folder}/log`
 
 ## Support and Contributions
 
