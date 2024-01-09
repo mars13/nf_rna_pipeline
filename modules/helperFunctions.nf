@@ -16,18 +16,33 @@ def printStartLogs () {
         project folder   : ${params.project_folder}
         input from       : ${params.reads_path}
         output to        : ${params.outdir}
-        reference files  : ${params.resource_folder}/GENOMES/${params.species}.${params.genome_version}/${params.annot_version}/
+        reference dir    : ${params.resource_folder}/GENOMES/${params.species}.${params.genome_version}/${params.annot_version}/
+        reference gtf    : ${params.reference_gtf}
         sample gtf list  : ${params.sample_gtf_list}
         --
-        qc         : ${params.qc}
-        align      : ${params.align}
-        assembly   : ${params.assembly}
-        merge      : ${params.merge}
+        qc          : ${params.qc}
+        align       : ${params.align}
+        assembly    : ${params.assembly}
+        merge       : ${params.merge}
+        build annot : ${params.build_annotation}
+        expression  : ${params.expression}
+        fusions     : ${params.fusions}
         ==========================
         """
         .stripIndent()
 }
 
+
+def check_files(name, path, type) {
+    if(!path) {
+        error "When running merge without assembly you must provide `${name}`."
+    } else {
+            file_to_check = file(path, type: "${type}")
+            if (!file_to_check.exists()) {
+                error  "--${name}: ${type} doesn't exist, check path ${path}"
+            }
+        }
+}
 
 def check_params() {
     //Check inputs
@@ -77,61 +92,27 @@ def check_params() {
     }
 
     //Check reference_gtf
-    if (!params.reference_gtf) {
-            error  "You must provide `reference_gtf`."
-    } else {
-        reference_gtf = file(params.reference_gtf, type: "file")
-        if (!reference_gtf.exists()) {
-            error  "--reference_gtf: file doesn't exist, check path ${params.reference_gtf}"
-        }
-    }
-    
+    check_files("reference_gtf", params.reference_gtf, "file")
+
     //Check kallisto index
     if (params.qc){
-        if (!params.kallisto_index) {
-            error  "You must provide `kallisto_index`."
-        } else {
-            kallisto_index = file(params.kallisto_index, type: "file")
-            if (!kallisto_index.exists()) {
-                error  "--kallisto_index: File doesn't exist, check path ${params.kallisto_index}"
-            }
-        }   
+        check_files("kallisto_index", params.kallisto_index, "file")
     }
     
     //Check star_index_basedir
     if (params.align){
-        if (!params.star_index_basedir) {
-            error  "You must provide `star_index_basedir`."
-        } else {
-            star_index_basedir = file(params.star_index_basedir, type: "dir")
-            if (!star_index_basedir.exists()) {
-                error  "--star_index_basedir: Directory doesn't exist, check path ${params.star_index_basedir}"
-            }
-        }   
+        check_files("star_index_basedir", params.star_index_basedir, "dir")
     }
 
     //Check refseq_gtf and masked_fasta for assembly steps
     if (params.assembly){
-        if (!params.refseq_gtf) {
-            error  "You must provide `refseq_gtf`."
-        } else {
-            refseq_gtf = file("${params.refseq_gtf}*")
-            if (refseq_gtf.isEmpty()) {
-                error  "--refseq_gtf: File doesn't exist, check path ${params.refseq_gtf}*"
-            }
-        } 
-
-        if (!params.masked_fasta) {
-            error  "You must provide `masked_fasta`."
-        } else {
-            masked_fasta = file(params.masked_fasta, type: "file")
-            if (!masked_fasta.exists()) {
-                error  "--masked_fasta: File doesn't exist, check path ${params.masked_fasta}"
-            }
-        }     
+        check_files("refseq_gtf", "${params.refseq_gtf}*", "file")
+        check_files("masked_fasta", ${params.masked_fasta}, "file")
     }
 
-    //TODO add check for twobit and reference_genome for build_custom_annotation
+    if (params.build_annotation) {
+        check_files("twobit", "${params.twobit}*", "file")
+    }
 
 }
 
