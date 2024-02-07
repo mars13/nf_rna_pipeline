@@ -64,7 +64,7 @@ process starAlign {
                       "--outFilterMismatchNmax 6 --outTmpKeep None " +
                       "--alignSJoverhangMin 10 --outFilterMultimapNmax 10 " +
                       "--outFilterScoreMinOverLread 0.75"
-    
+
     if (paired_end == true){
         """
         # Use STAR for mapping the reads

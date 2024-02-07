@@ -49,6 +49,14 @@ process trimGalore {
 
 }
 
+
+process fastp {
+
+//fastp commands
+
+
+}
+
 // Define process for checking strandedness
 process checkStrand {
     label "alignment"

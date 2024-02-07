@@ -7,7 +7,7 @@ process mergeGTF {
 
     input: 
         path(gtf_list)
-    
+
     output:
         publishDir "${params.outdir}/gffcompare", mode: 'copy'
         path("${params.merged_gtf_basename}/${params.merged_gtf_basename}*")
@@ -23,7 +23,7 @@ process mergeGTF {
         -r "${params.reference_gtf}" \
         -s ${params.masked_fasta} \
         -o "${params.merged_gtf_basename}/${params.merged_gtf_basename}" \
-        -i "${gtf_list}"    
+        -i "${gtf_list}"
     """
 }
 
@@ -31,15 +31,15 @@ process mergeGTF {
 process filterAnnotate {
     label "assembly"
     cpus 2
-    time '24h' 
+    time '24h'
     memory '10 GB' //change to 24
 
-    input: 
+    input:
         path(gtf_novel)
         path(gtf_tracking)
         val(min_occurrence)
 
-    
+
     output:
         publishDir "${params.outdir}/customannotation/", mode: 'copy'
         path("**${params.merged_gtf_basename}*")
@@ -59,26 +59,26 @@ process filterAnnotate {
     """
 }
 
-// Create custom annotation for RiboseQC and ORFquant
+// TODO FIX Create custom annotation for RiboseQC and ORFquant
 process customAnotation {
-    label "assembly"
-    cpus 2
-    time '24h' 
-    memory '10 GB'
-    clusterOptions '--gres=tmpspace:G'
+    clusterOptions '--mem=10G --cpus-per-task=2 --gres=tmpspace:50G --time=24:00:00'
+    containerOptions '/hpc:/hpc",${TMPDIR}:${TMPDIR} --env "LC_CTYPE=en_US.UTF-8'
 
-
-    input: 
-        tuple val(sample_id), path(reads)
-        val(paired_end)
-    
+    input:
+        merged_gtf
     output:
-        publishDir "${params.outdir}", mode: 'copy'
-        tuple val("${sample_id}"), path("trimgalore/${sample_id}/*")
+        publishDir "${params.outdir}/customannotation/", mode: 'copy'
+        path("custom_annotation/")
 
 
     script:
     """
+    Rscript orfquant_custom_annotation.R \
+    ${params.twobit} \
+    ${merged_gtf}\
+    ${params.merged_gtf_basename}/" \
+    ${params.merged_gtf_basename} \
+    ${package_install_loc}
     """
 }
 
