@@ -23,3 +23,7 @@ work/*
 .nextflow.*
 .nfs*
 .nextflow/
+
+
+#Ignore samplesheet
+assets/samplesheet.csv
