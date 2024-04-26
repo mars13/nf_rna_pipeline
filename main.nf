@@ -1,4 +1,5 @@
-include { printStartLogs; check_params} from "./modules/helperFunctions.nf"
+include { validateParameters; paramsHelp; paramsSummaryLog; fromSamplesheet } from 'plugin/nf-validation'
+include { printHeader; checkInputFiles} from "./modules/helperFunctions.nf"
 include { rnaseq_qc } from './subworkflows/rnaseq_qc'
 include { rnaseq_alignment } from './subworkflows/rnaseq_alignment'
 include { transcriptome_assembly } from './subworkflows/transcriptome_assembly'
@@ -8,12 +9,43 @@ include { expression } from './subworkflows/expression'
 
 workflow {
     // Initialise workflow
-    printStartLogs()
-    check_params()
+    if (params.help) {
+        log.info paramsHelp("nextflow run mars13/nf_rna_pipeline -c params.config")
+        exit 0
+    }
 
-   // Create reads input channel
-    reads =  Channel
-            .fromFilePairs(params.reads_path, size: params.paired_end ? 2 : 1, checkIfExists: true)
+    printHeader()
+
+    // Validate input parameters
+    validateParameters()
+
+    // Print summary of supplied parameters
+    log.info paramsSummaryLog(workflow)
+
+    // Validate files
+    checkInputFiles()
+
+    //Create input channel from samplesheet
+    ch_input = Channel.fromSamplesheet("samplesheet")
+    //ch_input.view()
+    ch_input
+        .filter { meta, filename_1, filename_2 ->
+            meta.filetype == "fastq" && meta.sequence == "rna"
+        }
+        .map { meta, fastq_1, fastq_2 ->
+                if (!fastq_2) {
+                    return [ meta.id, meta + [ paired_end:false ], [ fastq_1 ] ]
+                } else {
+                    return [ meta.id, meta + [ paired_end:true ], [ fastq_1, fastq_2 ] ]
+                }
+        }
+        .groupTuple()
+        .set{ ch_rna_reads }
+
+        ch_rna_reads.view()
+    
+    /*
+    DEPRECATED IN FAVOUR OF SAMPLESHEET
     // assign R1 and resolve symlinks
     r1 = reads.map { keys, files -> new File(files[0].toString()).canonicalPath }
     // assign R2 and resolve symlinks
@@ -43,6 +75,7 @@ workflow {
         name: 'sample_ids.txt',
         storeDir: "${params.project_folder}/documentation/",
         newLine: true, sort: true)
+    */
 
     // Step 01: QC
     if (params.qc) {
@@ -100,12 +133,18 @@ workflow {
 
     // Step 04: Fusion calling
     if (params.fusions) {
-        fusion_calling(star_input, params.paired_end, params.arriba_reference)
+        fusion_calling(star_input,
+                        params.paired_end,
+                        params.arriba_reference)
     }
 
     // Step 05: Expression
     if (params.expression) {
-        expression(star_input, params.paired_end, params.reference_transcriptome)
+            expression(star_input,
+                        bam,
+                        params.expression_mode,
+                        params.paired_end,
+                        params.reference_transcriptome)
     }
 }
 

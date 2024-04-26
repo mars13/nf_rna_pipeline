@@ -1,0 +1,232 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/YOUR_PIPELINE/master/nextflow_schema.json",
+    "title": "nf-rna-pipeline parameters",
+    "description": "Transcriptome analysis including mapping, assembly, expression quantification and fusion calling from RNA-seq short read data.",
+    "type": "object",
+    "definitions": {
+        "reference_files": {
+            "title": "Reference files",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "reference_gtf": {
+                    "type": "string",
+                    "description": "Reference annotation GTF"
+                },
+                "reference_transcriptome": {
+                    "type": "string",
+                    "description": "Reference assembly transcriptome"
+                },
+                "star_index_basedir": {
+                    "type": "string",
+                    "description": "Path to STAR index"
+                },
+                "refseq_gtf": {
+                    "type": "string",
+                    "description": "Path to refseq GTF"
+                },
+                "masked_fasta": {
+                    "type": "string",
+                    "description": "Path to masked fasta"
+                },
+                "species": {
+                    "type": "string",
+                    "description": "Species definition",
+                    "default": "Homo_sapiens",
+                    "hidden": true
+                },
+                "genome_version": {
+                    "type": "string",
+                    "description": "Version of the genome to use",
+                    "hidden": true,
+                    "default": "GRCh38"
+                },
+                "annot_version": {
+                    "type": "string",
+                    "default": "102",
+                    "hidden": true
+                },
+                "twobit": {
+                    "type": "string",
+                    "description": "Path to twobit"
+                },
+                "kallisto_index": {
+                    "type": "string",
+                    "description": "Path to kallisto_index for strandedness"
+                },
+                "arriba_reference": {
+                    "type": "string",
+                    "description": "Path to pre-built arriba reference folder"
+                }
+            },
+            "required": [
+                "reference_gtf"
+            ]
+        },
+        "extended_pipeline_options": {
+            "title": "Extended pipeline options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "custom_annotation": {
+                    "type": "string",
+                    "description": "Formats for custom annotation outputs",
+                    "default": "\"orfquant\""
+                },
+                "expression_mode": {
+                    "type": "string",
+                    "description": "expression mode for Salmon and/or FeatureCounts  [\"sq\", \"sa\", \"sqfc\", \"safc\", \"fc\"]",
+                    "default": "\"sqfc\""
+                },
+                "chr_exclusion_list": {
+                    "type": "string",
+                    "description": "List of chromosomes to exclude in transcriptome assembly",
+                    "default": "assets/chr_exclusion_list.txt"
+                },
+                "merged_gtf_basename": {
+                    "type": "string",
+                    "description": "Basename for the merged GTF and custom annotation files",
+                    "default": "transcriptome_full"
+                }
+            }
+        },
+        "modules": {
+            "title": "Modules",
+            "type": "object",
+            "description": "Toggles for the different pipeline modules",
+            "default": "",
+            "properties": {
+                "qc": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle for quality control module"
+                },
+                "align": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Toggle for alignment module"
+                },
+                "assembly": {
+                    "type": "boolean",
+                    "description": "Toggle for the assembly module",
+                    "default": true
+                },
+                "expression": {
+                    "type": "boolean",
+                    "description": "Toggle for the expression module",
+                    "default": true
+                },
+                "fusions": {
+                    "type": "boolean",
+                    "description": "Toggle for the fusion calling module",
+                    "default": true
+                },
+                "merge": {
+                    "type": "boolean",
+                    "description": "Toggle for merging individual GTF files into a single file",
+                    "default": true
+                },
+                "build_annotation": {
+                    "type": "boolean",
+                    "description": "Toggle to build custom annotation from merged GTFs",
+                    "default": true
+                }
+            }
+        },
+        "path_specifications": {
+            "title": "Path specifications",
+            "type": "object",
+            "description": "Input and output path definitions",
+            "default": "",
+            "properties": {
+                "project_folder": {
+                    "type": "string",
+                    "description": "path to folder where outputs and logs will be stored"
+                },
+                "outdir": {
+                    "type": "string",
+                    "default": "\"${params.project_folder}/output\"",
+                    "description": "name of the output folder"
+                },
+                "samplesheet": {
+                    "type": "string",
+                    "schema": "assets/schema_input.json",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "Path to comma-separated file containing information about the samples in the experiment."
+                },
+                "paired_end": {
+                    "type": "boolean",
+                    "description": "Wether reads are paired end",
+                    "default": true
+                },
+                "reads_path": {
+                    "type": "string",
+                    "description": "Path to fastq files (will be deprecated when samplesheet becomes available)"
+                }
+            },
+            "required": [
+                "project_folder",
+                "samplesheet",
+                "paired_end",
+                "reads_path"
+            ]
+        },
+        "optional_path_definitions": {
+            "title": "Optional path definitions",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "resource_folder": {
+                    "type": "string",
+                    "description": "path to annotation folder"
+                },
+                "container_folder": {
+                    "type": "string",
+                    "description": "path to container location"
+                },
+                "sample_gtf_list": {
+                    "type": "string",
+                    "description": "Path to file containing a list of individual sample GTFs for merging"
+                },
+                "strand_info": {
+                    "type": "string",
+                    "description": "Strandedness information if available"
+                }
+            }
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/reference_files"
+        },
+        {
+            "$ref": "#/definitions/extended_pipeline_options"
+        },
+        {
+            "$ref": "#/definitions/modules"
+        },
+        {
+            "$ref": "#/definitions/path_specifications"
+        },
+        {
+            "$ref": "#/definitions/optional_path_definitions"
+        }
+    ],
+    "properties": {
+        "bam_files": {
+            "type": "string",
+            "description": "Path to aligned bam files  (will be deprecated when samplesheet becomes available)",
+            "hidden": true
+        },
+        "wgs_sv": {
+            "type": "string",
+            "description": "Path to WGS vcf files for Arriba (will be deprecated once samplesheet becomes available)",
+            "hidden": true
+        }
+    }
+}

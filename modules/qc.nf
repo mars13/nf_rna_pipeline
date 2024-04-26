@@ -1,16 +1,14 @@
 // Define process for quality control (TrimGalore)
-//TODO update to fastp
 process trimGalore {
     label "alignment"
-    cpus 4 
-    time '24h' 
-    memory '24 GB' 
-    
+    cpus 4
+    time '24h'
+    memory '24 GB'
 
-    input: 
+    input:
         tuple val(sample_id), path(reads)
         val(paired_end)
-    
+
     output:
         publishDir "${params.outdir}", mode: 'copy'
         tuple val("${sample_id}"), path("trimgalore/${sample_id}/*")
@@ -19,10 +17,10 @@ process trimGalore {
     script:
     def r1_fname = "trimgalore/${sample_id}/${reads[0].getBaseName(2)}_val_1.fq.gz"
     def r1_trimmed = "trimgalore/${sample_id}/${reads[0].name.replaceFirst('R1', 'R1_trimmed')}"
-    
+
     if (paired_end == true){
-        """   
-        mkdir -p trimgalore 
+        """
+        mkdir -p trimgalore
         trim_galore \
             "${reads[0]}" "${reads[1]}" \
             --cores 2 \
@@ -37,9 +35,7 @@ process trimGalore {
         tot_reads=\$(zcat "${reads[0]}" | echo \$((`wc -l`/4)))
         trimmed_reads=\$(zcat "${r1_trimmed}" | echo \$((`wc -l`/4)))
         trimmed_percentage=`awk -vn=248 "BEGIN{print(\${trimmed_reads}/\${tot_reads}*100)}"`
-            
         printf '%s\t%s\t%s\t%s\n' "${sample_id}" "Trimmed" \$trimmed_reads \$trimmed_percentage > "trimgalore/${sample_id}/${sample_id}_trim_stats.txt"
-            
         """
     } else {
         println "trimgalore does not currently support single end reads"
@@ -49,26 +45,20 @@ process trimGalore {
 
 }
 
-
-process fastp {
-
-//fastp commands
-
-
-}
+//TODO update to fastp
 
 // Define process for checking strandedness
 process checkStrand {
     label "alignment"
 
-    cpus 2 
-    time '24h' 
-    memory '10 GB' 
+    cpus 2
+    time '24h'
+    memory '10 GB'
 
-    input: 
+    input:
         tuple val(sample_id), path(reads)
         val(paired_end)
-    
+
     output:
         publishDir "${params.outdir}/check_strandedness", mode: 'copy'
         tuple env(strand_info), path("**")

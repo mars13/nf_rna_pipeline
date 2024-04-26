@@ -1,0 +1,77 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/mars13/nf_rna_pipeline/master/assets/schema_input.json",
+    "title": "nf_rna_pipeline - params.input schema",
+    "description": "Schema for the file provided with params.input",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "subject_id": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Subject name must be provided and cannot contain spaces",
+                "meta": ["subject"]
+            },
+            "sample_id": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Sample name must be provided and cannot contain spaces",
+                "meta": ["id"]
+            },
+            "group_id": {
+                "errorMessage": "Group name cannot contain spaces.",
+                "type": "string",
+                "anyOf": [
+                    {
+                        "pattern": "^\\S+$"
+                    },
+                    {
+                        "maxLength": 0
+                    }
+                ],
+                "meta": ["cohort"]
+            },
+            "sample_type": {
+                "type": "string",
+                "errorMessage": "Sample type must be one of 'tumor' or 'normal'",
+                "enum": ["tumor", "normal"],
+                "meta": ["sample_type"]
+            },
+            "sequence_type": {
+                "type": "string",
+                "errorMessage": "Sequence type must be one of 'dna' or 'rna'",
+                "enum": ["dna", "rna"],
+                "meta": ["sequence"]
+            },
+            "file_type": {
+                "type": "string",
+                "errorMessage": "Accepted file types are 'fastq', 'bam', 'cram', 'vcf' or tabular formats ('csv', 'tsv', 'txt')",
+                "enum": ["fastq", "bam", "cram", "vcf", "somatic.filtered.vcf", "tsv", "csv"],
+                "meta": ["filetype"]
+            },
+            "filename_1": {
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "pattern": "^\\S+$",
+                "errorMessage": "filename_1 must be provided, cannot contain spaces and must have a valid extension matching the filetype."
+            },
+            "filename_2": {
+                "errorMessage": "filename_2 cannot contain spaces and must have a valid extension matching the filetype.",
+                "type": "string",
+                "format": "file-path",
+                "exists": true,
+                "anyOf": [
+                    {
+                        "pattern": "^\\S+$"
+                    },
+                    {
+                        "maxLength": 0
+                    }
+                ]
+            }
+        },
+        "required": ["subject_id", "sample_id", "sample_type", "sequence_type", "file_type", "filename_1"]
+    }
+}
