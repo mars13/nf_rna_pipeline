@@ -9,6 +9,7 @@ include { expression } from './subworkflows/expression'
 
 workflow {
     // Initialise workflow
+    //schema chache id 1714122041_2c59f5906135 exp 05-10-2024
     if (params.help) {
         log.info paramsHelp("nextflow run mars13/nf_rna_pipeline -c params.config")
         exit 0

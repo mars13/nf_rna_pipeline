@@ -17,13 +17,10 @@ test/results/*
 test/log/*
 test/documentation/*.txt
 test/scripts/*
+test/documentation/samplesheet.csv
 
 #Ignore nextflow work and logs
 work/*
 .nextflow.*
 .nfs*
 .nextflow/
-
-
-#Ignore samplesheet
-assets/samplesheet.csv
