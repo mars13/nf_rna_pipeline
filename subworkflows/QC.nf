@@ -8,7 +8,7 @@ workflow QC {
         outdir
 
     main:
-        //Run trimGalore
+        //Run fastp
         fastp(reads, paired_end)
 
         //Collect fastp stats (changed to within fastp folder)

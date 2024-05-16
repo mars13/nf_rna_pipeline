@@ -1,5 +1,5 @@
 process salmon_index {
-    label "expression"
+    label "salmon"
 
     cpus 12
     time '48h'
@@ -18,7 +18,7 @@ process salmon_index {
 }
 
 process salmon_quasi {
-    label "expression"
+    label "salmon"
 
     cpus 12
     time '48h'
@@ -28,7 +28,6 @@ process salmon_quasi {
     tuple(val(sample_id), path(reads))
     val paired_end
     path salmon_index
-    val expression_mode
     path outdir
 
     output:
@@ -68,7 +67,7 @@ process salmon_quasi {
 
 
 process salmon_bam {
-    label "expression"
+    label "salmon"
 
     cpus 12
     time '48h'

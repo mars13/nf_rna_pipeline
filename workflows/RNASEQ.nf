@@ -4,7 +4,7 @@ include { QC } from '../subworkflows/QC'
 include { ALIGN } from '../subworkflows/ALIGN'
 include { ASSEMBLY } from '../subworkflows/ASSEMBLY'
 include { FUSIONS } from '../subworkflows/FUSIONS'
-include { EXPRESSION } from '../subworkflows/QUANT'
+include { EXPRESSION } from '../subworkflows/EXPRESSION'
 
 workflow RNASEQ {
     // Initialise workflow
@@ -49,9 +49,9 @@ workflow RNASEQ {
 
     // Step 01: QC
     if (params.qc) {
-        qc(reads, paired_end, params.outdir)
-        star_input = qc.out.trimmed_reads
-        strand = qc.out.strand
+        QC(reads, paired_end, params.outdir)
+        star_input = QC.out.trimmed_reads
+        strand = QC.out.strand
     } else {
         default_trimmed_reads = "${params.outdir}/**/*{R1,R2}*_trimmed.{fastq.gz,fq.gz}"
         if (file(default_trimmed_reads).isEmpty()) {
@@ -84,8 +84,8 @@ workflow RNASEQ {
     // Step 02: Align
     if (params.align){
         //TODO provide all params from main workflow
-        rnaseq_alignment(star_input, paired_end, params.outdir)
-        bam = rnaseq_alignment.out.bam
+        ALIGN(star_input, paired_end, params.outdir)
+        bam = ALIGN.out.bam
     } else {
          // Look for alignment files
         default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
@@ -104,7 +104,7 @@ workflow RNASEQ {
     if (params.assembly || params.merge) {
         if (paired_end) {
             //TODO provide al params from main workflow
-            transcriptome_assembly(strand, bam)
+            ASSEMBLY(strand, bam)
         } else {
             println "Transcriptome assembly not suported for single stranded data."
             exit 1
@@ -113,17 +113,17 @@ workflow RNASEQ {
 
     // Step 04: Fusion calling
     if (params.fusions) {
-        fusion_calling(star_input,
+        FUSIONS(star_input,
                         params.paired_end,
                         params.arriba_reference)
     }
 
     // Step 05: Expression
     if (params.expression) {
-            expression(star_input,
+            EXPRESSION(star_input,
                         bam,
                         params.expression_mode,
-                        params.paired_end,
+                        paired_end,
                         params.reference_transcriptome,
                         params.outdir)
     }
