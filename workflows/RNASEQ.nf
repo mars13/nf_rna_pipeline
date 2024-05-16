@@ -4,7 +4,7 @@ include { QC } from '../subworkflows/QC'
 include { ALIGN } from '../subworkflows/ALIGN'
 include { ASSEMBLY } from '../subworkflows/ASSEMBLY'
 include { FUSIONS } from '../subworkflows/FUSIONS'
-include { EXPRESSION } from '../subworkflows/EXPRESSION'
+include { EXPRESSION } from '../subworkflows/QUANT'
 
 workflow RNASEQ {
     // Initialise workflow
@@ -124,7 +124,8 @@ workflow RNASEQ {
                         bam,
                         params.expression_mode,
                         params.paired_end,
-                        params.reference_transcriptome)
+                        params.reference_transcriptome,
+                        params.outdir)
     }
 
     //Step 06: MultiQC

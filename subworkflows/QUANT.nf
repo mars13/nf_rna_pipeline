@@ -1,4 +1,4 @@
-include { salmon_index; salmon_quasi; salmon_bam} from "../modules/salmon"
+include { salmon_index; salmon_quasi; salmon_bam } from '../modules/salmon'
 
 workflow EXPRESSION {
     take:
@@ -7,6 +7,7 @@ workflow EXPRESSION {
         mode
         paired_end
         transcriptome
+        outdir
 
     main:
         if (mode ~= "sq") {
