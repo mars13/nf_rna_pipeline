@@ -1,6 +1,6 @@
 include { starAlignChimeric; runArriba } from '../modules/arriba'
 
-workflow fusion_calling {
+workflow FUSIONS {
     take:
         reads
         paired_end

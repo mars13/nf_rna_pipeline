@@ -1,13 +1,18 @@
-include { indexLength; starAlign; samtools } from '../modules/align'
+include { indexLength; STAR; samtools } from '../modules/starAlign'
 
-workflow rnaseq_alignment {
+workflow ALIGN {
     take:
         reads
         paired_end
         outdir
 
     main:
-        starAlign(reads, "${params.paired_end}", indexLength(reads))
+        STAR(reads,
+                  paired_end,
+                  indexLength(reads),
+                  outdir, 
+                  params.reference_gtf,
+                  params.star_index_basedir)
         samtools(starAlign.out.bam)
         samtools.out
         .map({key, file ->

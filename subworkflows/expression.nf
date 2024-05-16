@@ -1,6 +1,6 @@
-include { salmon_index; salmon_quant} from "../modules/salmon"
+include { salmon_index; salmon_quasi} from "../modules/salmon"
 //TODO make process for salmon_quasi and salmon_bam
-workflow expression {
+workflow EXPRESSION {
     take:
         reads
         bam
@@ -9,11 +9,13 @@ workflow expression {
         transcriptome
 
     main:
-        if (mode == "sq" || !bam) {
+        if (mode ~= "sq") {
             salmon_index(transcriptome)
-            salmon_quant(reads, paired_end, salmon_index.out)
-        } else {
-
+            salmon_quant(reads, paired_end, salmon_index.out, outdir)
+        } else if  (mode ~= "sa" ) {
+            salmon_bam(bam, outdir)
+        } else if (mode ~= "fc") {
+            println "FeatureCounts not yet implemented"
         }
 
 

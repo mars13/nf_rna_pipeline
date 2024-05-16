@@ -6,23 +6,14 @@ count_mono_exonics <- function(gtf) {
   #
   # Finds transcripts with a single exon and removes those from the object
   
-  # Remove transcripts that are found by StringTie with only single exon
-  t <- as.data.frame(table(gtf$transcript_id))
-  colnames(t) <- c("transcript_id",
-                   "exon_count")
+  # Remove transcripts that are found by StringTie with only single exon (minus one to account for the transcript entry)
+  transcript_counts <- table(gtf$transcript_id) - 1
+  monoexonic_tx_ids = names(transcript_counts[transcript_counts < 2])
   
-  # Each transcript has a transcript row and exon row
-  t$exon_count <- t$exon_count - 1
-  gtf_count <- left_join(as.data.frame(gtf),
-                         t,
-                         by = "transcript_id")
-  
-  mono_transcripts <- subset(gtf_count,
-                             exon_count < 2 &
-                               is.na(ref_gene_id) &
-                               source == "StringTie")
-  
-  return(mono_transcripts)
+  #Filter original gtf
+  monoexonic_transcripts <- subset(gtf, (transcript_id %in% monoexonic_tx_ids) & source == "StringTie" & ref_gene_id == "-")
+
+  return(monoexonic_transcripts)
   
 }
 

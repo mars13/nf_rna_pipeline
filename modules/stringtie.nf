@@ -3,9 +3,6 @@
 // Define process for stringtie
 process stringtie {
     label "assembly"
-    cpus 4 //chsange to 4 after testing
-    time '24h' //change to 24 after testing
-    memory '24 GB' //change to 24 after testing
 
     input: 
         val(strand)
@@ -16,9 +13,9 @@ process stringtie {
         publishDir "${params.outdir}/stringtie", mode: 'copy'
         path("${sample_id}/${sample_id}.gtf")
 
-
     script:
-    chromosome_exclusion = chr ? "-x ${chr}" : "" 
+    def chromosome_exclusion = chr ? "-x ${chr}" : ""
+
 
     """
         stringtie ${bam[0]} \
@@ -31,7 +28,8 @@ process stringtie {
             -g 40 \
             -j 2 \
             -s 99999 \
-            -p 4 ${chromosome_exclusion} \
+            -p ${task.cpus} \
+            ${chromosome_exclusion} \
             -o "${sample_id}/${sample_id}.gtf"
     """
 }

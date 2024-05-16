@@ -47,10 +47,6 @@ def check_files(name, path, type) {
 
 def checkInputFiles() {
     //Check inputs
-    if (file(params.reads_path).isEmpty()) {
-        error "--reads_path: File doesn't exist, check path ${params.reads_path}"
-    }
-
     default_strand =  "${params.outdir}/check_strandedness/strandedness_all.txt"
     if (!params.qc && ( params.align || params.assembly )) {
         if (!params.strand_info && file(default_strand, type : "file").exists()) {
@@ -100,12 +96,8 @@ def checkInputFiles() {
                 """.stripIndent()
         }
 
-        if (!params.paired_end){
-            error "Transcriptome assembly not supported with single-end reads.".stripIndent()
-        } else {
-            check_files("refseq_gtf", "${params.refseq_gtf}*", "file")
-            check_files("masked_fasta", "${params.masked_fasta}", "file")
-        }
+        check_files("refseq_gtf", "${params.refseq_gtf}*", "file")
+        check_files("masked_fasta", "${params.masked_fasta}", "file")
     }
 
     //Check sample gtf list for merge without assembly
@@ -149,8 +141,5 @@ def checkInputFiles() {
     }
 
     log.info "\n==========================\n"
-
-
-
 }
 

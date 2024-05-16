@@ -17,7 +17,7 @@ process salmon_index {
     """
 }
 
-process salmon_quant {
+process salmon_quasi {
     label "expression"
 
     cpus 12
@@ -26,16 +26,16 @@ process salmon_quant {
 
     input:
     tuple(val(sample_id), path(reads))
-    val(paired_end)
-    path(salmon_index)
-    val(expression_mode)
+    val paired_end
+    path salmon_index
+    val expression_mode
+    path outdir
 
     output:
-    publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
+    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
     path("${sample_id}/*")
 
     script:
-    if (expression_mode == "quasi") {
         if (paired_end == true){
             """
             salmon quant \
@@ -64,10 +64,35 @@ process salmon_quant {
             --output "${sample_id}"
             """
         }
-    } else {
-        """
-        pwd
-        """
-    }
-    
+}
+
+
+process salmon_bam {
+    label "expression"
+
+    cpus 12
+    time '48h'
+    memory '64 GB'
+
+    input:
+    path bam
+    path transcriptome
+    path outdir
+
+    output:
+    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
+    path("${sample_id}/*")
+
+    script:
+    """
+    salmon quant \
+    -t "${transcriptome}" \
+    -a "${bam}" \
+    --libType "A" \
+    --gcBias \
+    --quiet \
+    --numGibbsSamples 30 \
+    --threads $task.cpus \
+    --output "${sample_id}"
+    """
 }

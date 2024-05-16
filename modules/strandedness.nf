@@ -1,0 +1,41 @@
+// Define process for checking strandedness
+process checkStrand {
+    label "qc"
+
+    cpus 2
+    time '24h'
+    memory '10 GB'
+
+    input:
+        tuple val(sample_id), path(reads)
+        val(paired_end)
+
+    output:
+        publishDir "${params.outdir}/check_strandedness", mode: 'copy'
+        tuple env(strand_info), path("**")
+
+    script:
+    if (paired_end == true){
+        """
+        check_strandedness \
+            -g ${params.reference_gtf} \
+            -n 1000000 \
+            -r1 ${reads[0]} \
+            -r2 ${reads[1]} \
+            -k "${params.kallisto_index}" >> "${sample_id}.txt"
+        strandedness=\$(tail -n 1 ${sample_id}.txt | awk 'NF>1{print \$NF}')
+        strand_info=\$(printf "%s\t%s\n" "${sample_id}" "\$strandedness")
+        """
+    } else {
+        println "checkStrand does not currently support single end reads"
+        """
+        check_strandedness \
+            -g ${params.reference_gtf} \
+            -n 1000000 \
+            -r1 ${reads[0]} \
+            -k "${params.kallisto_index}" >> "${sample_id}.txt"
+        strandedness=\$(tail -n 1 ${sample_id}.txt | awk 'NF>1{print \$NF}')
+        strand_info=\$(printf "%s\t%s\n" "${sample_id}" "\$strandedness")
+        """
+    }
+}

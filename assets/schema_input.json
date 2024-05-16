@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/mars13/nf_rna_pipeline/master/assets/schema_input.json",
     "title": "nf_rna_pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
@@ -11,13 +11,17 @@
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "Subject name must be provided and cannot contain spaces",
-                "meta": ["subject"]
+                "meta": [
+                    "subject"
+                ]
             },
             "sample_id": {
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
-                "meta": ["id"]
+                "meta": [
+                    "id"
+                ]
             },
             "group_id": {
                 "errorMessage": "Group name cannot contain spaces.",
@@ -30,25 +34,47 @@
                         "maxLength": 0
                     }
                 ],
-                "meta": ["cohort"]
+                "meta": [
+                    "cohort"
+                ]
             },
             "sample_type": {
                 "type": "string",
                 "errorMessage": "Sample type must be one of 'tumor' or 'normal'",
-                "enum": ["tumor", "normal"],
-                "meta": ["sample_type"]
+                "enum": [
+                    "tumor",
+                    "normal"
+                ],
+                "meta": [
+                    "sample_type"
+                ]
             },
             "sequence_type": {
                 "type": "string",
                 "errorMessage": "Sequence type must be one of 'dna' or 'rna'",
-                "enum": ["dna", "rna"],
-                "meta": ["sequence"]
+                "enum": [
+                    "dna",
+                    "rna"
+                ],
+                "meta": [
+                    "sequence"
+                ]
             },
             "file_type": {
                 "type": "string",
                 "errorMessage": "Accepted file types are 'fastq', 'bam', 'cram', 'vcf' or tabular formats ('csv', 'tsv', 'txt')",
-                "enum": ["fastq", "bam", "cram", "vcf", "somatic.filtered.vcf", "tsv", "csv"],
-                "meta": ["filetype"]
+                "enum": [
+                    "fastq",
+                    "bam",
+                    "cram",
+                    "vcf",
+                    "somatic.filtered.vcf",
+                    "tsv",
+                    "csv"
+                ],
+                "meta": [
+                    "filetype"
+                ]
             },
             "filename_1": {
                 "type": "string",
@@ -72,6 +98,21 @@
                 ]
             }
         },
-        "required": ["subject_id", "sample_id", "sample_type", "sequence_type", "file_type", "filename_1"]
+        "required": [
+            "subject_id",
+            "sample_id",
+            "sample_type",
+            "sequence_type",
+            "file_type",
+            "filename_1"
+        ],
+        "dependentRequired": {
+            "filename_2": [
+                "filename_1"
+            ]
+        },
+        "uniqueEntries": [
+            "filename_1"
+        ]
     }
 }

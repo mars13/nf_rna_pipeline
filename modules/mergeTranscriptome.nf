@@ -1,9 +1,6 @@
 // Define process for GTF merging
 process mergeGTF {
     label "assembly"
-    cpus 2 //change to 4
-    time '24h' 
-    memory '10 GB' //change 48
 
     input: 
         path(gtf_list)
@@ -30,32 +27,33 @@ process mergeGTF {
 // Define process for transcript filtering and annotation
 process filterAnnotate {
     label "assembly"
-    cpus 2
-    time '24h'
-    memory '10 GB' //change to 24
 
     input:
+        val(reference_gtf)
+        val(refseq_gtf)
         path(gtf_novel)
         path(gtf_tracking)
         val(min_occurrence)
+        val(merged_gtf_basename)
+        val(scripts_dir)
 
 
     output:
         publishDir "${params.outdir}/customannotation/", mode: 'copy'
-        path("**${params.merged_gtf_basename}*")
+        path("**${merged_gtf_basename}*")
 
 
     script:
     """
-    mkdir -p plots
+    #mkdir -p plots
     filter_annotate.R \
-    "${params.reference_gtf}" \
-    "${params.refseq_gtf}" \
+    "${reference_gtf}" \
+    "${refseq_gtf}" \
     "${gtf_novel}" \
     "${gtf_tracking}" \
     "${min_occurrence}" \
-    "${params.merged_gtf_basename}"_novel_filtered.gtf
-
+    "${merged_gtf_basename}_novel_filtered" \
+    "${scripts_dir}"
     """
 }
 
@@ -79,6 +77,7 @@ process customAnotation {
     ${params.merged_gtf_basename}/" \
     ${params.merged_gtf_basename} \
     ${package_install_loc}
+
     """
 }
 

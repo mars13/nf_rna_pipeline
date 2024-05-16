@@ -1,4 +1,4 @@
-include { stringtie } from '../modules/sampleGTF'
+include { stringtie } from '../modules/stringtie'
 include { mergeGTF; filterAnnotate; customAnotation } from '../modules/mergeTranscriptome'
 
 def getStrandtype(strand) {
@@ -12,7 +12,7 @@ def getStrandtype(strand) {
         }
 }
 
-workflow transcriptome_assembly {
+workflow ASSEMBLY {
     take:
         strand
         bam
@@ -35,11 +35,12 @@ workflow transcriptome_assembly {
 
             stringtie.out
             .map { it -> it.toString() }
+            .tap { gtf_list }
+            .map { it -> it.replaceFirst("${workDir}/[^/]*/[^/]*/", "${params.outdir}/stringtie/") } //Replace the work dir path with the output dir
             .collectFile(
                 name: 'gtflist.txt',
                 storeDir: "${params.outdir}/stringtie/",
-                newLine: true, sort: true)
-            .set { gtf_list }
+                newLine: true, sort: true )
         }
 
         if (params.merge) {
@@ -57,14 +58,22 @@ workflow transcriptome_assembly {
             gtf_novel = mergeGTF.out.flatten().filter(~/.*\.combined\.gtf/)
             gtf_tracking = mergeGTF.out.flatten().filter(~/.*\.tracking/)
 
-            filterAnnotate(gtf_novel, gtf_tracking, 1)
+            scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
+
+            filterAnnotate(params.reference_gtf,
+                           params.refseq_gtf,
+                           gtf_novel,
+                           gtf_tracking,
+                           1,
+                           params.merged_gtf_basename,
+                           scripts_dir)
 
             merged_gtf = filterAnnotate.out.filter(~/.*_novel_filtered\.gtf/)
 
-            if (params.custom_annotation) {
-                if ( params.custom_annotation ==~ /orfquant/ ) {
-                    customAnotation(merged_gtf)
-                }
-            }
+            //if (params.custom_annotation) {
+            //   if ( params.custom_annotation ==~ /orfquant/ ) {
+            //        customAnotation(merged_gtf)
+            //   }
+            //}
         }
 }

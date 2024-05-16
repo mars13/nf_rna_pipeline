@@ -24,3 +24,6 @@ work/*
 .nextflow.*
 .nfs*
 .nextflow/
+
+#Ignore dev files
+schema_cache_id.txt

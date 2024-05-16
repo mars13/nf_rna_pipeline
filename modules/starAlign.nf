@@ -2,11 +2,11 @@
 process indexLength{
     label "alignment"
 
-    input: 
+    input:
         tuple val(sample_id), path(reads)
     output:
         env used_index
-    script: 
+    script:
 
     """
     # Check first 10k reads for read length for star index
@@ -36,21 +36,19 @@ process indexLength{
 }
 
 // Define process for alignment with STAR
-process starAlign {
+process STAR {
     label "alignment"
 
-    cpus 16 
-    time '24h' 
-    memory '100 GB' 
-
-    // Define input/output as needed
     input: 
         tuple val(sample_id), path(reads)
         val(paired_end)
         val(usedIndex)
+        path(outdir)
+        val(reference_gtf)
+        val(star_index_basedir)
 
     output:
-        publishDir "${params.outdir}/star/", mode: 'copy', pattern: "${sample_id}/${sample_id}*.out"    //fix to add .out.tab
+        publishDir "${outdir}/star/", mode: 'copy', pattern: "${sample_id}/${sample_id}*.out"    //fix to add .out.tab
         path("${sample_id}/${sample_id}.*"), emit: files
         tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
 
@@ -68,8 +66,8 @@ process starAlign {
     if (paired_end == true){
         """
         # Use STAR for mapping the reads
-        STAR --genomeDir "${params.star_index_basedir}/${usedIndex}nt" \
-        --sjdbGTFfile ${params.reference_gtf} \
+        STAR --genomeDir "${star_index_basedir}/${usedIndex}nt" \
+        --sjdbGTFfile ${reference_gtf} \
         --readFilesIn "${reads[0]}" "${reads[1]}" \
         --outSAMattrRGline ID:${sample_id} LB:${sample_id} PL:IllUMINA SM:${sample_id} \
         --outFileNamePrefix "${sample_id}/${sample_id}." \
@@ -119,6 +117,6 @@ process samtools {
     samtools stats -@ 8 "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"
 
     # Index the bam with samtools
-    samtools index -@ 8 "${sample_id}/${new_bam}" 
+    samtools index -@ 8 "${sample_id}/${new_bam}"
     """
 }
