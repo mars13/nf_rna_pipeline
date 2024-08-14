@@ -135,8 +135,6 @@ def checkInputFiles() {
 
         if (!bam_avail & (params.expression_mode != "sq")) {
             log.info "expression mode  : ${params.expression_mode} --> sq [forced to quasi-mapping, no bam avail]"
-        } else {
-            log.info "expression mode  : ${params.expression_mode}"
         }
     }
 

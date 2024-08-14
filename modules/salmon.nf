@@ -1,10 +1,6 @@
 process salmon_index {
     label "salmon"
 
-    cpus 12
-    time '48h'
-    memory '64 GB'
-
     input:
     path transcriptome
 
@@ -19,10 +15,6 @@ process salmon_index {
 
 process salmon_quasi {
     label "salmon"
-
-    cpus 12
-    time '48h'
-    memory '64 GB'
 
     input:
     tuple(val(sample_id), path(reads))
@@ -69,12 +61,8 @@ process salmon_quasi {
 process salmon_bam {
     label "salmon"
 
-    cpus 12
-    time '48h'
-    memory '64 GB'
-
     input:
-    path bam
+    tuple(val(sample_id), path(bam))
     path transcriptome
     path outdir
 
@@ -93,5 +81,31 @@ process salmon_bam {
     --numGibbsSamples 30 \
     --threads $task.cpus \
     --output "${sample_id}"
+    """
+}
+
+
+process salmon_tables {
+    label "salmon"
+
+    cpus 2
+    time '4h'
+    memory '24 GB'
+
+    input:
+    path base_dir
+    path gtf
+    path prefix
+
+    output:
+    publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${prefix}*"
+    path "${prefix}*"
+
+    script:
+    """
+    salmon_cohort_tables.R \
+    ${base_dir} \
+    ${gtf} \
+    ${prefix}
     """
 }

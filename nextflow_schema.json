@@ -156,9 +156,9 @@
                     "description": "List of chromosomes to exclude in transcriptome assembly",
                     "default": "assets/chr_exclusion_list.txt"
                 },
-                "merged_gtf_basename": {
+                "output_basename": {
                     "type": "string",
-                    "description": "Basename for the merged GTF and custom annotation files",
+                    "description": "Basename for the merged GTF, custom annotation files and expression tables",
                     "default": "transcriptome_full"
                 }
             }
@@ -196,6 +196,29 @@
                     "hidden": true
                 }
             }
+        },
+        "specs": {
+            "title": "Maximum specifications for computational resources",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "max_memory": {
+                    "type": "string",
+                    "description": "max memory for each process",
+                    "hidden": true
+                },
+                "max_cpus": {
+                    "type": "integer",
+                    "description": "max cpus for each process",
+                    "hidden": true
+                },
+                "max_time": {
+                    "type": "string",
+                    "description": "max time for each process",
+                    "hidden": true
+                }
+            }
         }
     },
     "allOf": [
@@ -213,6 +236,9 @@
         },
         {
             "$ref": "#/defs/optional_path_defs"
+        },
+        {
+            "$ref": "#/defs/specs"
         }
     ]
 }

@@ -46,6 +46,7 @@ workflow RNASEQ {
     paired_end = ch_reads.paired_end
 
     //TODO handle bamfiles from samplesheet
+    //TODO handle WGS vcfs from samplesheet
 
     // Step 01: QC
     if (params.qc) {
@@ -112,6 +113,7 @@ workflow RNASEQ {
     }
 
     // Step 04: Fusion calling
+    // TODO could we combine mapping for fusions and for txome assembly in one?
     if (params.fusions) {
         FUSIONS(star_input,
                         params.paired_end,
@@ -128,7 +130,9 @@ workflow RNASEQ {
                         params.outdir)
     }
 
-    //Step 06: MultiQC
+    //Step 06: Immune landscape
+
+    //Step 07: MultiQC
 
 }
 

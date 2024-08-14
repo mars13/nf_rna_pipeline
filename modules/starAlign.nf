@@ -55,7 +55,7 @@ process STAR {
     script:
     // STAR params defined as concatenated strings singe triple quote multiline declaration generates newline
     def star_params = "--readFilesCommand zcat " +
-                      "--twopassMode Basic --runThreadN 16 --runDirPerm All_RWX " +
+                      "--twopassMode Basic --runDirPerm All_RWX " +
                       "--outFilterType BySJout --outSAMunmapped Within " +
                       "--outSAMattributes NH HI AS nM NM MD jM jI MC ch " +
                       "--outSAMstrandField intronMotif --outSAMtype BAM Unsorted " +
@@ -71,7 +71,7 @@ process STAR {
         --readFilesIn "${reads[0]}" "${reads[1]}" \
         --outSAMattrRGline ID:${sample_id} LB:${sample_id} PL:IllUMINA SM:${sample_id} \
         --outFileNamePrefix "${sample_id}/${sample_id}." \
-        ${star_params}
+        --runThreadN $task.cpus ${star_params}
         """
     } else {
         println "STAR does not currently support single end reads"
@@ -81,10 +81,11 @@ process STAR {
 }
 
 // Define process for getting mapping stats, sorted bam and .bai with Samtools
+//TODO add threads as ${task.cpus} and resolve clusterOptions
 process samtools {
     label "alignment"
 
-    cpus 16 
+    cpus 8 
     time '24h' 
     memory '48 GB'
     clusterOptions '--gres=tmpspace:100G'
@@ -105,7 +106,7 @@ process samtools {
     mkdir -p tmp/
     # Sort BAM
     samtools sort \
-    -@ 8 \
+    -@ $task.cpus \
     -l 9 \
     -o "${sample_id}/${new_bam}" \
     -T "tmp/" \
@@ -114,9 +115,9 @@ process samtools {
     rm -r tmp/
 
     # Create mapping statistics with samtools
-    samtools stats -@ 8 "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"
+    samtools stats -@ $task.cpus "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"
 
     # Index the bam with samtools
-    samtools index -@ 8 "${sample_id}/${new_bam}"
+    samtools index -@ $task.cpus "${sample_id}/${new_bam}"
     """
 }

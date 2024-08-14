@@ -1,8 +1,7 @@
-include { salmon_index; salmon_quasi; salmon_bam } from '../modules/salmon'
+include { salmon_index; salmon_quasi; salmon_bam; salmon_tables} from '../modules/salmon'
 
 workflow EXPRESSION {
 
-    //TODO create salmon counts and expression tables per cohort
     take:
         reads
         bam
@@ -15,7 +14,11 @@ workflow EXPRESSION {
         if (mode =~ /sq/) {
             salmon_index(transcriptome)
             salmon_quasi(reads, paired_end, salmon_index.out, outdir)
-        } else if  (mode == "sa" ) {
-            salmon_bam(bam, transcriptome, outdir)
+        } else if  (mode =~ /sa/ ) {
+            println "Container for salmon alignment mode not available."
+            exit 1
         }
+        //TODO implement salmon_tables
+        //salmon_tables("$outdir/salmon", transcriptome, ${params.output_basename})
+
 }

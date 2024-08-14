@@ -11,6 +11,10 @@
 # Output: =====================================================================
 # 1. outfile: custom annotated GTF
 
+# Track versions:
+version = "0.1"
+date = "10-06-2024"
+
 # Load required packages
 message(paste(Sys.time(), "Loading required libraries ..."), sep = "\t")
 suppressPackageStartupMessages({
@@ -120,7 +124,7 @@ fixGTF <- function(gtf_refseq_basename, gtf_ref_path, min_occurrence, novel_gtf_
   # Count the number of genes with transcripts on multiple strands
   genes_with_multiple_strands <- sum(novel_gtf_multiple_strands$nstrands > 1)
   
-  # Display a message based on the count 
+  # Display a message based on the count
   #TODO should move after filtering?
   if (genes_with_multiple_strands > 0) {
     message(paste(genes_with_multiple_strands, "genes have transcripts on multiple strands."))
@@ -156,8 +160,8 @@ fixGTF <- function(gtf_refseq_basename, gtf_ref_path, min_occurrence, novel_gtf_
   
   # WRITE LOG FILE
   
-  ## Initialise log file 
-  cat("#GTF FILTERING v1.0 (last updated 14-05-2024)", "\n", file = output_log_path)
+  ## Initialise log file
+  cat("#GTF FILTERING", version, "(last updated", date, ")", "\n", file = output_log_path)
   cat("#gtf_ref_path=", gtf_ref_path,"\n", file = output_log_path, append = T)
   cat("#gtf_refseq_basename=", gtf_refseq_basename,"\n", file = output_log_path, append = T)
   cat("#novel_gtf_path=", novel_gtf_path,"\n", file = output_log_path, append = T)

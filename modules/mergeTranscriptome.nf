@@ -2,24 +2,24 @@
 process mergeGTF {
     label "assembly"
 
-    input: 
+    input:
         path(gtf_list)
 
     output:
         publishDir "${params.outdir}/gffcompare", mode: 'copy'
-        path("${params.merged_gtf_basename}/${params.merged_gtf_basename}*")
+        path("${params.output_basename}/${params.output_basename}*")
 
     when:
         gtf_list.exists()
 
     script:
     """
-    mkdir -p ${params.merged_gtf_basename}
+    mkdir -p ${params.output_basename}
     gffcompare \
         -V \
         -r "${params.reference_gtf}" \
         -s ${params.masked_fasta} \
-        -o "${params.merged_gtf_basename}/${params.merged_gtf_basename}" \
+        -o "${params.output_basename}/${params.output_basename}" \
         -i "${gtf_list}"
     """
 }
@@ -34,13 +34,13 @@ process filterAnnotate {
         path(gtf_novel)
         path(gtf_tracking)
         val(min_occurrence)
-        val(merged_gtf_basename)
+        val(output_basename)
         val(scripts_dir)
 
 
     output:
         publishDir "${params.outdir}/customannotation/", mode: 'copy'
-        path("**${merged_gtf_basename}*")
+        path("**${output_basename}*")
 
 
     script:
@@ -52,12 +52,12 @@ process filterAnnotate {
     "${gtf_novel}" \
     "${gtf_tracking}" \
     "${min_occurrence}" \
-    "${merged_gtf_basename}_novel_filtered" \
+    "${output_basename}_novel_filtered" \
     "${scripts_dir}"
     """
 }
 
-// TODO FIX Create custom annotation for RiboseQC and ORFquant
+// TODO FIX Create custom annotation for RiboseQC and ORFquant OR do it in Ribo-seq pipeline
 process customAnotation {
     clusterOptions '--mem=10G --cpus-per-task=2 --gres=tmpspace:50G --time=24:00:00'
     containerOptions '/hpc:/hpc",${TMPDIR}:${TMPDIR} --env "LC_CTYPE=en_US.UTF-8'
@@ -74,10 +74,9 @@ process customAnotation {
     Rscript orfquant_custom_annotation.R \
     ${params.twobit} \
     ${merged_gtf}\
-    ${params.merged_gtf_basename}/" \
-    ${params.merged_gtf_basename} \
+    ${params.output_basename}/" \
+    ${params.output_basename} \
     ${package_install_loc}
-
     """
 }
 

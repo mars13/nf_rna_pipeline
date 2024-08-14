@@ -4,11 +4,11 @@
 process stringtie {
     label "assembly"
 
-    input: 
+    input:
         val(strand)
         tuple val(sample_id), path(bam)
         val(chr)
-    
+
     output:
         publishDir "${params.outdir}/stringtie", mode: 'copy'
         path("${sample_id}/${sample_id}.gtf")

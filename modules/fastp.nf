@@ -1,16 +1,14 @@
 // Define process for trimming and quality control (fastp)
 process fastp {
     label "qc"
-    cpus 4
-    time '24h'
-    memory '24 GB'
+
+    publishDir "${params.outdir}", mode: 'copy'
 
     input:
         tuple val(sample_id), path(reads)
         val(paired_end)
 
     output:
-        publishDir "${params.outdir}", mode: 'copy'
         tuple val("${sample_id}"), path("fastp/${sample_id}/*")
 
 

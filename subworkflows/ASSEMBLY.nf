@@ -25,17 +25,23 @@ workflow ASSEMBLY {
 
             //locate chromosome exclusion list
             if(params.chr_exclusion_list) {
-                chromosome_exclusion_list = file(params.chr_exclusion_list)
+            //TODO now only able to access default assets, not other paths in the file system.
+                chromosome_exclusion_list = file("${workflow.projectDir}/${params.chr_exclusion_list}")
                                             .readLines().join(",")
             } else {
                 chromosome_exclusion_list = null
             }
 
+            //TODO gtf_list is not correctly collected
             stringtie(strand, bam, chromosome_exclusion_list)
 
             stringtie.out
+            .set { gtf_list }
+
+            gtf_list.view()
+
+            gtf_list
             .map { it -> it.toString() }
-            .tap { gtf_list }
             .map { it -> it.replaceFirst("${workDir}/[^/]*/[^/]*/", "${params.outdir}/stringtie/") } //Replace the work dir path with the output dir
             .collectFile(
                 name: 'gtflist.txt',
@@ -65,7 +71,7 @@ workflow ASSEMBLY {
                            gtf_novel,
                            gtf_tracking,
                            1,
-                           params.merged_gtf_basename,
+                           params.output_basename,
                            scripts_dir)
 
             merged_gtf = filterAnnotate.out.filter(~/.*_novel_filtered\.gtf/)

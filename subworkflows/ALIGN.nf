@@ -10,7 +10,7 @@ workflow ALIGN {
         STAR(reads,
                   paired_end,
                   indexLength(reads),
-                  outdir, 
+                  outdir,
                   params.reference_gtf,
                   params.star_index_basedir)
         samtools(STAR.out.bam)
