@@ -1,12 +1,14 @@
 # Nextflow RNA-seq Pipeline
 
-This Nextflow-based pipeline performs comprehensive RNA-seq analysis, including mapping and assembly (expression quantification and fusion calling coming up soon). 
+This pipeline is designed for the analysis of RNA-seq data, covering various modules such as alignment, assembly, QC, fusion detection, and expression analysis. It is flexible and can currently handle paired-end sequencing data (with intention to expand to single-end for the modules that support it).
 
 ## Overview
 
-1. **Quality Control and Adapter Trimming**: Utilizes FastQC for assessing the quality of raw sequencing data and trims adapters and filters low-quality reads using Trimmomatic.
-3. **Alignment**: Aligns processed reads to a reference genome using STAR.
-4. **Transcriptome Assembly**: Assembles transcripts in individual samples with stringtie, merges all samples and checks against a reference with GFFcompare, and finally filters the merged transcriptome.
+1. **Quality Control and Adapter Trimming**: Utilizes FastP for assessing the quality of raw sequencing data and trims adapters and filters low-quality reads. Additionaly confirms strandedness for downstream transcriptome assembly.
+2. **Alignment**: Aligns processed reads to a reference genome using STAR.
+3. **Transcriptome Assembly**: Assembles transcripts of individual samples with stringtie, merges all samples and checks against a reference with GFFcompare, and finally filters the merged transcriptome.
+4. **Fusions**: Detects gene fusions using Arriba.
+5. **Expression Analysis**: Quantifies gene expression using Salmon.
 
 ## Usage
 
