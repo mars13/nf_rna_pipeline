@@ -29,12 +29,11 @@ workflow QC {
                 newLine: true, sort: true)
 
     emit:
-        strand = null
         strand = strandedness
         trimmed_reads = fastp.out
                             .map({key, file ->
                                 tuple( key,
-                                    file.findAll({ it =~ /.*(?:R1|R2)_trimmed.*\.fastq\.gz$/ })
+                                    file.findAll({ it =~ /.*(?:R1|R2).*_trimmed\.fastq\.gz$/ })
                                     )
                                 })
 }
