@@ -32,15 +32,14 @@ workflow ASSEMBLY {
                 chromosome_exclusion_list = null
             }
 
-            //TODO gtf_list is not correctly collected
             stringtie(strand, bam, chromosome_exclusion_list)
 
-            stringtie.out
+            //Wait untill all stringtie runs are completed
+            stringtie.out.collect()
             .set { gtf_list }
 
-            gtf_list.view()
-
-            gtf_list
+            //Combine all paths of stringties results into one file
+            gtf_list = gtf_list.flatten()
             .map { it -> it.toString() }
             .map { it -> it.replaceFirst("${workDir}/[^/]*/[^/]*/", "${params.outdir}/stringtie/") } //Replace the work dir path with the output dir
             .collectFile(
