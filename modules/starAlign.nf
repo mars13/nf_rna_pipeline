@@ -48,7 +48,7 @@ process STAR {
         val(star_index_basedir)
 
     output:
-        publishDir "${outdir}/star/", mode: 'copy', pattern: "${sample_id}/${sample_id}*.out"    //fix to add .out.tab
+        publishDir "${params.outdir}/star/", mode: 'copy'
         path("${sample_id}/${sample_id}.*"), emit: files
         tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
 
@@ -81,14 +81,8 @@ process STAR {
 }
 
 // Define process for getting mapping stats, sorted bam and .bai with Samtools
-//TODO add threads as ${task.cpus} and resolve clusterOptions
 process samtools {
     label "alignment"
-
-    cpus 8 
-    time '24h' 
-    memory '48 GB'
-    clusterOptions '--gres=tmpspace:100G'
 
     input: 
         tuple val(sample_id), path(bam)
@@ -98,7 +92,7 @@ process samtools {
         tuple val(sample_id), path("${sample_id}/${sample_id}*")
 
     script:
-    def new_bam= "${bam.name.replaceFirst('.Aligned.out.bam', '.Aligned.sortedByCoord.out.bam')}"
+    def new_bam = "${bam.name.replaceFirst('.Aligned.out.bam', '.Aligned.sortedByCoord.out.bam')}"
 
 
     """
