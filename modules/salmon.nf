@@ -13,6 +13,7 @@ process salmon_index {
     """
 }
 
+//Salmon genomic alignment
 process salmon_quasi {
     label "salmon"
 
@@ -23,7 +24,7 @@ process salmon_quasi {
     path outdir
 
     output:
-    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
+    publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
     path("${sample_id}/*")
 
     script:
@@ -67,7 +68,7 @@ process salmon_bam {
     path outdir
 
     output:
-    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
+    publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
     path("${sample_id}/*")
 
     script:
@@ -86,16 +87,13 @@ process salmon_bam {
 
 
 process salmon_tables {
-    label "salmon"
-
-    cpus 2
-    time '4h'
-    memory '24 GB'
+    label "salmon_tables"
 
     input:
     path base_dir
     path gtf
-    path prefix
+    val prefix
+    val testing
 
     output:
     publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${prefix}*"
@@ -105,7 +103,7 @@ process salmon_tables {
     """
     salmon_cohort_tables.R \
     ${base_dir} \
-    ${gtf} \
+    ${params.reference_gtf} \
     ${prefix}
     """
 }
