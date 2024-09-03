@@ -13,16 +13,15 @@ process salmon_index {
     """
 }
 
-//Salmon genomic alignment
 process salmon_quasi {
     label "salmon"
-    publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
+    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
 
     input:
     tuple(val(sample_id), path(reads))
     val paired_end
     path salmon_index
-    path outdir
+    val outdir
 
     output:
     path("${sample_id}/*", emit: salmon_output_dir)
@@ -62,6 +61,7 @@ process salmon_quasi {
 
 process salmon_bam {
     label "salmon"
+    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
 
     input:
     tuple(val(sample_id), path(bam))
@@ -69,7 +69,6 @@ process salmon_bam {
     val outdir
 
     output:
-    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
     path("${sample_id}/*")
 
     script:
@@ -89,6 +88,7 @@ process salmon_bam {
 
 process salmon_tables {
     label "salmon_tables"
+    publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${prefix}*"
 
     input:
     val quant_paths
@@ -96,7 +96,6 @@ process salmon_tables {
     val prefix
 
     output:
-    publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${prefix}*"
     path "${prefix}*"
 
     script:
