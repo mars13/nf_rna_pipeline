@@ -13,7 +13,7 @@ workflow ALIGN {
                   outdir,
                   params.reference_gtf,
                   params.star_index_basedir)
-        samtools(STAR.out.bam)
+        samtools(STAR.out.bam, outdir)
         samtools.out
         .map({key, file ->
             tuple( key,

@@ -43,12 +43,12 @@ process STAR {
         tuple val(sample_id), path(reads)
         val(paired_end)
         val(usedIndex)
-        path(outdir)
+        val(outdir)
         val(reference_gtf)
         val(star_index_basedir)
 
     output:
-        publishDir "${params.outdir}/star/", mode: 'copy'
+        publishDir "${outdir}/star/", mode: 'copy'
         path("${sample_id}/${sample_id}.*"), emit: files
         tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
 
@@ -86,9 +86,10 @@ process samtools {
 
     input: 
         tuple val(sample_id), path(bam)
+        val outdir
 
     output:
-        publishDir "${params.outdir}/star/", mode: 'copy'
+        publishDir "${outdir}/star/", mode: 'copy'
         tuple val(sample_id), path("${sample_id}/${sample_id}*")
 
     script:

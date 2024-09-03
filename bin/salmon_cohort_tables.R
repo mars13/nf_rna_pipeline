@@ -3,15 +3,15 @@
 # Author: Marina Reixachs Sole [M.Reixachssole@prinsesmaximacentrum.nl]
 #
 # Input requirements: =========================================================
-# 1. base_dir: salmon base directory
+# 1. quant_paths: text file with paths to all salmon output quant.sf files
 # 2. gtf_file: reference or custom gtf for TX2GENE
 # 3. prefix: prefix for the output files
 #
 # Output: =====================================================================
-# 1. transcript_counts.txt: file containing transcript counts for all samples in base_dir
-# 2. transcript_tpms.txt: file containing transcript TPM quantifications for all samples in base_dir
-# 3. gene_counts.txt: file containing aggregated gene counts for all samples in base_dir
-# 4. gene_tpms.txt: file containing aggregated gene TPM quantifications for all samples in base_dir
+# 1. transcript_counts.txt: file containing transcript counts for all samples in quant_paths
+# 2. transcript_tpms.txt: file containing transcript TPM quantifications for all samples in quant_paths
+# 3. gene_counts.txt: file containing aggregated gene counts for all samples in quant_paths
+# 4. gene_tpms.txt: file containing aggregated gene TPM quantifications for all samples in quant_paths
 
 
 # LIBRARIES-----------------
@@ -27,10 +27,9 @@ suppressPackageStartupMessages({
 # READ ARGS-----------------
 args <- commandArgs(trailingOnly = TRUE)
 
-base_dir = args[1]
+quant_paths = args[1]
 gtf_file = args[2]
 prefix = args[3]
-
 
 # FUNCTIONS -----------------
 
@@ -50,12 +49,6 @@ get_tx2gene <- function(gtf_data) {
   return(tx2gene)
 }
 
-
-# Function to get all quant.sf files recursively
-get_quant_files <- function(base_dir) {
-  list.files(path = base_dir, pattern = "quant.sf$", full.names = TRUE, recursive = TRUE)
-}
-
 # Function to write properly formatted tables
 write_tsv <- function(data, file) {
   write.table(data, file = file, sep = "\t", row.names = TRUE, col.names = TRUE, quote = FALSE)
@@ -71,7 +64,9 @@ gtf_data <- read_delim(gtf_file, delim = "\t", col_names = FALSE, comment = "#")
 tx2gene <- get_tx2gene(gtf_data)
 
 # Get the list of quant.sf files
-quant_files <- get_quant_files(base_dir)
+#quant_files <- get_quant_files(base_dir)
+
+quant_files <- readLines(quant_paths)
 
 # Check if there are any quant.sf files found
 if (length(quant_files) == 0) {
@@ -80,7 +75,7 @@ if (length(quant_files) == 0) {
 
 # Create a named vector for files
 names(quant_files) <- basename(dirname(quant_files))
-
+print(names(quant_files))
 
 # Import the quantification files using tximport
 txi <- tximport(files = quant_files, type = "salmon", txOut = TRUE)
@@ -122,4 +117,3 @@ write_tsv(txi.name$abundance, gene_name_tpms_file)
 
 cat("Successfully wrote gene-level counts (by gene name) to:", gene_name_counts_file, "\n")
 cat("Successfully wrote gene-level TPMs (by gene name) to:", gene_name_tpms_file, "\n")
-

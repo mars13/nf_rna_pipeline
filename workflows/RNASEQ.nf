@@ -7,6 +7,10 @@ include { FUSIONS } from '../subworkflows/FUSIONS'
 include { EXPRESSION } from '../subworkflows/EXPRESSION'
 
 workflow RNASEQ {
+  
+    // Give output directory location
+    //params.outdir_rnaseq = ${params.outdir}/rnaseq/
+  
     // Initialise workflow
 
     // Validate input parameters
@@ -127,7 +131,9 @@ workflow RNASEQ {
                         params.expression_mode,
                         paired_end,
                         params.reference_transcriptome,
-                        params.outdir)
+                        params.reference_gtf,
+                        params.outdir,
+                        params.output_basename)
     }
 
     //Step 06: Immune landscape
