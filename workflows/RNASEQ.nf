@@ -56,7 +56,7 @@ workflow RNASEQ {
     if (params.qc) {
         QC(reads, paired_end, params.outdir)
         star_input = QC.out.trimmed_reads
-        strand = QC.out.strand
+        strand = QC.out.strandedness
     } else {
         default_trimmed_reads = "${params.outdir}/**/*{R1,R2}*_trimmed.{fastq.gz,fq.gz}"
         if (file(default_trimmed_reads).isEmpty()) {
@@ -65,7 +65,7 @@ workflow RNASEQ {
         } else {
             //log.info "Using trimmed reads in: ${default_trimmed_reads}" MISLEADING WHEN BAM IS PRESENT, TODO change or remove
             star_input = Channel
-                            .fromFilePairs(default_trimmed_reads, size: paired_end ? 2 : 1, checkIfExists: true)
+                .fromFilePairs(default_trimmed_reads, size: paired_end ? 2 : 1, checkIfExists: true)
         }
 
         // Look for strandedness summary file
@@ -120,20 +120,20 @@ workflow RNASEQ {
     // TODO could we combine mapping for fusions and for txome assembly in one?
     if (params.fusions) {
         FUSIONS(star_input,
-                        params.paired_end,
-                        params.arriba_reference)
+            params.paired_end,
+            params.arriba_reference)
     }
 
     // Step 05: Expression
     if (params.expression) {
-            EXPRESSION(star_input,
-                        bam,
-                        params.expression_mode,
-                        paired_end,
-                        params.reference_transcriptome,
-                        params.reference_gtf,
-                        params.outdir,
-                        params.output_basename)
+        EXPRESSION(star_input,
+            bam,
+            params.expression_mode,
+            paired_end,
+            params.reference_transcriptome,
+            params.reference_gtf,
+            params.outdir,
+            params.output_basename)
     }
 
     //Step 06: Immune landscape

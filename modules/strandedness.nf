@@ -1,18 +1,15 @@
 // Define process for checking strandedness
 process checkStrand {
     label "qc"
-
-    cpus 2
-    time '24h'
-    memory '10 GB'
+    publishDir "${params.outdir}/check_strandedness", mode: 'copy'
 
     input:
-        tuple val(sample_id), path(reads)
-        val(paired_end)
+    tuple val(sample_id), path(reads)
+    val(paired_end)
 
     output:
-        publishDir "${params.outdir}/check_strandedness", mode: 'copy'
-        tuple env(strand_info), path("**")
+    env(strand_info, emit: strand)
+    path("**")
 
     script:
     if (paired_end == true){

@@ -1,39 +1,29 @@
 include { fastp } from '../modules/fastp'
 include { checkStrand } from '../modules/strandedness'
 
+//Run fastp on the input reads and obatains their strandedness
 workflow QC {
     take:
-        reads
-        paired_end
-        outdir
+    reads      // input fastq files
+    paired_end // bool, true if paired end data
+    outdir     // path to output dir
 
     main:
-        //Run fastp
-        fastp(reads, paired_end)
-
-        //Collect fastp stats (changed to within fastp folder)
-        fastp.out.map{key, files -> files }
-            .flatten()
-            .filter(~/.*trim_stats\.txt/)
+    // Run fastp and sets the output fastq file to variable trimmed_reads
+    trimmed_reads = fastp(reads, paired_end, outdir).out.fastq_files
+ 
+     // Run strandedness
+    checkStrand(reads, paired_end)
+    // Create a file containing the strand of all files
+    strandedness = checkStrand.out
+            .strand
             .collectFile(
-                name: 'trim_stats.txt',
-                storeDir: "${params.outdir}/fastp/",
-                newLine: false, sort: true)
-
-        //Run strandedness
-        strandedness = checkStrand(reads, paired_end).map { keys, files -> keys }
-        strandedness
-            .collectFile(
-                name: 'strandedness_all.txt',
-                storeDir: "${params.outdir}/check_strandedness/",
-                newLine: true, sort: true)
+            name: 'strandedness_all.txt',
+            storeDir: "${outdir}/check_strandedness/",
+            newLine: true, sort: true)
 
     emit:
-        strand = strandedness
-        trimmed_reads = fastp.out
-                            .map({key, file ->
-                                tuple( key,
-                                    file.findAll({ it =~ /.*(?:R1|R2).*_trimmed\.fastq\.gz$/ })
-                                    )
-                                })
+    strandedness  // File, strandedness of the data
+    trimmed_reads // Tuple, sample and trimmed fastq files
+
 }

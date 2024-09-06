@@ -4,13 +4,13 @@ workflow EXPRESSION {
 
     take:
         reads
-        bam
-        mode
+        bam  // bam file created by star align
+        mode  // salmon mode to run
         paired_end
         transcriptome
         reference_gtf
         outdir
-        output_basename
+        output_basename // file prefix given to the salmon_tables results
 
     main:
         if (mode =~ /sq/) {

@@ -1,16 +1,16 @@
 // Define process for GTF merging
 process mergeGTF {
     label "assembly"
+    publishDir "${params.outdir}/gffcompare", mode: 'copy'
 
     input:
-        path(gtf_list)
+    path(gtf_list)
 
     output:
-        publishDir "${params.outdir}/gffcompare", mode: 'copy'
-        path("${params.output_basename}/${params.output_basename}*")
+    path("${params.output_basename}/${params.output_basename}*")
 
     when:
-        gtf_list.exists()
+    gtf_list.exists()
 
     script:
     """
@@ -27,21 +27,19 @@ process mergeGTF {
 // Define process for transcript filtering and annotation
 process filterAnnotate {
     label "assembly"
+    publishDir "${params.outdir}/customannotation/", mode: 'copy'
 
     input:
-        val(reference_gtf)
-        val(refseq_gtf)
-        path(gtf_novel)
-        path(gtf_tracking)
-        val(min_occurrence)
-        val(output_basename)
-        val(scripts_dir)
-
+    val(reference_gtf)
+    val(refseq_gtf)
+    path(gtf_novel)
+    path(gtf_tracking)
+    val(min_occurrence)
+    val(output_basename)
+    val(scripts_dir)
 
     output:
-        publishDir "${params.outdir}/customannotation/", mode: 'copy'
-        path("**${output_basename}*")
-
+    path("**${output_basename}*")
 
     script:
     """
@@ -61,13 +59,13 @@ process filterAnnotate {
 process customAnotation {
     clusterOptions '--mem=10G --cpus-per-task=2 --gres=tmpspace:50G --time=24:00:00'
     containerOptions '/hpc:/hpc",${TMPDIR}:${TMPDIR} --env "LC_CTYPE=en_US.UTF-8'
+    publishDir "${params.outdir}/customannotation/", mode: 'copy'
 
     input:
-        merged_gtf
+    merged_gtf
+    
     output:
-        publishDir "${params.outdir}/customannotation/", mode: 'copy'
-        path("custom_annotation/")
-
+    path("custom_annotation/")
 
     script:
     """

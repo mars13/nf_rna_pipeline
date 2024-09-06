@@ -3,11 +3,12 @@ process indexLength{
     label "alignment"
 
     input:
-        tuple val(sample_id), path(reads)
+    tuple val(sample_id), path(reads)
+    
     output:
-        env used_index
+    env used_index
+    
     script:
-
     """
     # Check first 10k reads for read length for star index
     read_length=\$(gunzip -c "${reads[0]}" | \
@@ -32,25 +33,24 @@ process indexLength{
     fi
     """
 
-
 }
 
 // Define process for alignment with STAR
 process STAR {
     label "alignment"
+    publishDir "${outdir}/star/", mode: 'copy'
 
     input: 
-        tuple val(sample_id), path(reads)
-        val(paired_end)
-        val(usedIndex)
-        val(outdir)
-        val(reference_gtf)
-        val(star_index_basedir)
+    tuple val(sample_id), path(reads)
+    val(paired_end)
+    val(usedIndex)
+    val(outdir)
+    val(reference_gtf)
+    val(star_index_basedir)
 
     output:
-        publishDir "${outdir}/star/", mode: 'copy'
-        path("${sample_id}/${sample_id}.*"), emit: files
-        tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
+    path("${sample_id}/${sample_id}.*"), emit: files
+    tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
 
     script:
     // STAR params defined as concatenated strings singe triple quote multiline declaration generates newline
@@ -83,18 +83,18 @@ process STAR {
 // Define process for getting mapping stats, sorted bam and .bai with Samtools
 process samtools {
     label "alignment"
+    publishDir "${outdir}/star/", mode: 'copy'
+
 
     input: 
-        tuple val(sample_id), path(bam)
-        val outdir
+    tuple val(sample_id), path(bam)
+    val outdir
 
     output:
-        publishDir "${outdir}/star/", mode: 'copy'
-        tuple val(sample_id), path("${sample_id}/${sample_id}*")
+    tuple val(sample_id), path("${sample_id}/${sample_id}*")
 
     script:
     def new_bam = "${bam.name.replaceFirst('.Aligned.out.bam', '.Aligned.sortedByCoord.out.bam')}"
-
 
     """
     mkdir -p ${sample_id}

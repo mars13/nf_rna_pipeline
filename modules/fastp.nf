@@ -2,15 +2,16 @@
 process fastp {
     label "qc"
 
-    publishDir "${params.outdir}", mode: 'copy'
+    publishDir "${outdir}", mode: 'copy'
 
     input:
-        tuple val(sample_id), path(reads)
-        val(paired_end)
+    tuple val(sample_id), path(reads)
+    val(paired_end)
+    val(outdir)
 
     output:
-        tuple val("${sample_id}"), path("fastp/${sample_id}/*")
-
+    tuple val("${sample_id}"), path("fastp/${sample_id}/*_trimmed.fastq.gz"), emit: fastq_files // tuple of sample id, and all fastq files
+    path "fastp/${sample_id}/${sample_id}_fastp_report.json" //output the json files for publishDir
 
     script:
     def r1_out = "fastp/${sample_id}/${reads[0].getBaseName(2)}"
@@ -35,7 +36,7 @@ process fastp {
         """
     } else {
         """
-        mkdir -p ${sample_id}
+        mkdir -p fastp/${sample_id}
         fastp \
         -i "${reads[0]}" \
         -o "${r1_out}_trimmed.fastq.gz" \
