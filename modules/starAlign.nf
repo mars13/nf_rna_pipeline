@@ -42,17 +42,18 @@ process STAR {
 
     input: 
     tuple val(sample_id), path(reads)
-    val(paired_end)
-    val(usedIndex)
-    val(outdir)
-    val(reference_gtf)
-    val(star_index_basedir)
+    val paired_end
+    val usedIndex
+    val reference_gtf
+    val star_index_basedir
+    val outdir
 
     output:
-    path("${sample_id}/${sample_id}.*"), emit: files
+    path "${sample_id}/${sample_id}.*"
     tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
 
     script:
+    //TODO: check out star bam writing option and compare to samtools sort output
     // STAR params defined as concatenated strings singe triple quote multiline declaration generates newline
     def star_params = "--readFilesCommand zcat " +
                       "--twopassMode Basic --runDirPerm All_RWX " +
@@ -75,7 +76,7 @@ process STAR {
         """
     } else {
         println "STAR does not currently support single end reads"
-        //TODO add single end commands
+        //TODO: add single end commands
 
     }
 }
@@ -85,13 +86,14 @@ process samtools {
     label "alignment"
     publishDir "${outdir}/star/", mode: 'copy'
 
-
     input: 
     tuple val(sample_id), path(bam)
     val outdir
 
     output:
-    tuple val(sample_id), path("${sample_id}/${sample_id}*")
+    tuple val(sample_id), path("${sample_id}/${sample_id}*.Aligned.sortedByCoord.out.bam"), emit:sorted_bam
+    path("${sample_id}/${sample_id}*") // Output all files to publishDir
+
 
     script:
     def new_bam = "${bam.name.replaceFirst('.Aligned.out.bam', '.Aligned.sortedByCoord.out.bam')}"
