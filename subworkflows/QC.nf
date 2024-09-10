@@ -10,12 +10,12 @@ workflow QC {
 
     main:
     // Run fastp and sets the output fastq file to variable trimmed_reads
-    trimmed_reads = fastp(reads, paired_end, outdir).out.fastq_files
- 
+    trimmed_reads = fastp(reads, paired_end, outdir).fastq_files
+    
      // Run strandedness
-    checkStrand(reads, paired_end)
+    strandedness = checkStrand(reads, paired_end).strand
     // Create a file containing the strand of all files
-    strandedness = checkStrand.out
+    checkStrand.out
             .strand
             .collectFile(
             name: 'strandedness_all.txt',

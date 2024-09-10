@@ -2,7 +2,7 @@ process salmon_index {
     label "salmon"
 
     input:
-    path transcriptome
+    path transcriptome // Existing transcriptome file
 
     output:
     path 'salmon_index'
@@ -24,38 +24,30 @@ process salmon_quasi {
     val outdir
 
     output:
-    path("${sample_id}/*", emit: salmon_output_dir)
-    path("${sample_id}/quant.sf", emit: quant)
+    path "${sample_id}/quant.sf", emit: quant
+    path "${sample_id}/*"
 
     script:
         if (paired_end == true){
-            """
-            salmon quant \
-            --libType "A" \
-            --validateMappings \
-            --gcBias \
-            --quiet \
-            --numGibbsSamples 30 \
-            --threads $task.cpus \
-            -i "${salmon_index}" \
-            -1 "${reads[0]}" \
-            -2 "${reads[1]}" \
-            --output "${sample_id}"
-            """
+            // Set salmon quant paired end input arguments
+            quant_input = """-1 "${reads[0]}" -2 "${reads[1]}" """
         } else {
-            """
-            salmon quant \
-            --libType "A" \
-            --validateMappings \
-            --gcBias \
-            --quiet \
-            --numGibbsSamples 30 \
-            --threads $task.cpus \
-            -i "${salmon_index}" \
-            -r "${reads}" \
-            --output "${sample_id}"
-            """
+            // Set salmon quant single end input arguments
+            quant_input = """-i "${salmon_index}" """
         }
+
+        """
+        salmon quant \
+        --libType "A" \
+        --validateMappings \
+        --gcBias \
+        --quiet \
+        --numGibbsSamples 30 \
+        --threads $task.cpus \
+        -i "${salmon_index}" \
+        ${quant_input} \
+        --output "${sample_id}"
+        """
 }
 
 
@@ -69,7 +61,7 @@ process salmon_bam {
     val outdir
 
     output:
-    path("${sample_id}/*")
+    path "${sample_id}/*"
 
     script:
     """
@@ -88,12 +80,13 @@ process salmon_bam {
 
 process salmon_tables {
     label "salmon_tables"
-    publishDir "${params.outdir}/salmon", mode: 'copy', pattern: "${prefix}*"
+    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${prefix}*"
 
     input:
     val quant_paths
     path gtf
     val prefix
+    val outdir
 
     output:
     path "${prefix}*"

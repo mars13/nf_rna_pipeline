@@ -1,25 +1,30 @@
 include { salmon_index; salmon_quasi; salmon_bam; salmon_tables} from '../modules/salmon'
 
+/*
+* Run salmon steps to obtain expression statistics
+*/
 workflow EXPRESSION {
 
     take:
-    reads
-    bam  // bam file created by star align
-    mode  // salmon mode to run
-    paired_end
-    transcriptome
-    reference_gtf
-    outdir
-    output_basename // file prefix given to the salmon_tables results
+    reads           // Input read file(s)
+    bam             // Bam file created by star align
+    mode            // Salmon mode to run
+    paired_end      // Bool, is data paired end or not
+    transcriptome   // Path to the input transcriptome file
+    reference_gtf   // Path to the reference gtf file
+    output_basename // File prefix given to the salmon_tables results
+    outdir          // Path to output directory
 
     main:
     if (mode =~ /sq/) {
+        // Create the salmon index of the given transcriptome
         salmon_index(transcriptome)
+
         // Run salmon and write paths of quant.sf output files to a text file
         salmon_quasi(reads, paired_end, salmon_index.out, outdir)
+
         // Write the paths of the salmon_quasi output files to a text file
-        quant_paths = salmon_quasi.out
-            .quant
+        quant_paths = salmon_quasi.out.quant
             .map { it -> it.toString() }
             .collectFile(
             name: 'quant_paths.txt',
@@ -33,7 +38,7 @@ workflow EXPRESSION {
         exit 1
     }
     // Run the salmon_tables R script to obtain salmon statistics
-    salmon_tables(quant_paths, reference_gtf, output_basename)
+    salmon_tables(quant_paths, reference_gtf, output_basename, outdir)
 
 }
 

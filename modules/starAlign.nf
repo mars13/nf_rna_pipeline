@@ -53,7 +53,6 @@ process STAR {
     tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
 
     script:
-    //TODO: check out star bam writing option and compare to samtools sort output
     // STAR params defined as concatenated strings singe triple quote multiline declaration generates newline
     def star_params = "--readFilesCommand zcat " +
                       "--twopassMode Basic --runDirPerm All_RWX " +
@@ -92,7 +91,7 @@ process samtools {
 
     output:
     tuple val(sample_id), path("${sample_id}/${sample_id}*.Aligned.sortedByCoord.out.bam"), emit:sorted_bam
-    path("${sample_id}/${sample_id}*") // Output all files to publishDir
+    path "${sample_id}/${sample_id}*" // Output all files to publishDir
 
 
     script:

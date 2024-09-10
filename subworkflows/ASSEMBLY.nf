@@ -1,6 +1,8 @@
 include { stringtie } from '../modules/stringtie'
 include { mergeGTF; filterAnnotate; customAnotation } from '../modules/mergeTranscriptome'
 
+
+// Groovy function to check if strand type exists and to set the strand type if found
 def getStrandtype(strand) {
         if (strand ==~ /.*RF\/fr-firststrand/) {
         strand_type = "rf"
@@ -14,71 +16,85 @@ def getStrandtype(strand) {
 
 workflow ASSEMBLY {
     take:
-        strand
-        bam
+    strand
+    bam
+    sample_gtf_list
+    reference_gtf
+    refseq_gtf
+    chr_exclusion_list
+    masked_fasta
+    output_basename
+    outdir
 
     main:
-        //Run stringtie unless paths to precomputed individual sample GTF are provided
-        if (!params.sample_gtf_list & params.assembly) {
-             //set strand
-            strand.map{ it -> getStrandtype(it) }.set{ strand }
+    // Run stringtie unless paths to precomputed individual sample GTF are provided
+    if (!sample_gtf_list & params.assembly) {
+            // Set strand
+        strand = strand.map{ it -> getStrandtype(it) }
 
-            //locate chromosome exclusion list
-            if(params.chr_exclusion_list) {
-            //TODO now only able to access default assets, not other paths in the file system.
-                chromosome_exclusion_list = file("${workflow.projectDir}/${params.chr_exclusion_list}")
-                                            .readLines().join(",")
-            } else {
-                chromosome_exclusion_list = null
-            }
-
-            stringtie(strand, bam, chromosome_exclusion_list)
-
-            //Wait untill all stringtie runs are completed
-            stringtie.out.collect()
-            .set { gtf_list }
-
-            //Combine all paths of stringties results into one file
-            gtf_list = gtf_list.flatten()
-            .map { it -> it.toString() }
-            .map { it -> it.replaceFirst("${workDir}/[^/]*/[^/]*/", "${params.outdir}/stringtie/") } //Replace the work dir path with the output dir
-            .collectFile(
-                name: 'gtflist.txt',
-                storeDir: "${params.outdir}/stringtie/",
-                newLine: true, sort: true )
+        // Locate chromosome exclusion list
+        if(chr_exclusion_list) {
+        // Groovy command to join the chr exclusion list on ","
+            chromosome_exclusion_list = file("${projectDir}/${chr_exclusion_list}").readLines().join(",")
+        } else {
+            chromosome_exclusion_list = null
         }
 
-        if (params.merge) {
+        // Run stringtie
+        stringtie(strand, bam, chromosome_exclusion_list, reference_gtf, outdir)
 
-            if (params.sample_gtf_list) {
-                gtf_list = Channel.fromPath("${params.sample_gtf_list}")
-                gtf_list
-                .splitText(){ it.trim() }
-                .take(1)
-                .ifEmpty { error "Could not find sample GTF files in: ${params.sample_gtf_list}" }
-            }
+        // Wait untill all stringtie runs are completed
+        gtf_paths = stringtie.out.collect().flatten()
+                    .map { it -> it.toString() } // Change paths to strings
 
-            mergeGTF(gtf_list)
+        // Store gtflist in outputdir
+        // replaceFirst is a groovy statement to replace part of a string based on a pattern
+        gtf_paths.map { it -> it.replaceFirst("${workDir}/[^/]*/[^/]*/", "${outdir}/stringtie/") } //Replace the work dir path with the output dir
+        .collectFile(
+            name: 'gtflist.txt',
+            storeDir: "${outdir}/stringtie/",
+            newLine: true, sort: true )
 
-            gtf_novel = mergeGTF.out.flatten().filter(~/.*\.combined\.gtf/)
-            gtf_tracking = mergeGTF.out.flatten().filter(~/.*\.tracking/)
+        // Store gtflist to workdir
+        gtf_list = gtf_paths.collectFile(
+            name: 'gtflist.txt',
+            newLine: true, sort: true )
 
-            scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
+    }
 
-            filterAnnotate(params.reference_gtf,
-                           params.refseq_gtf,
-                           gtf_novel,
-                           gtf_tracking,
-                           1,
-                           params.output_basename,
-                           scripts_dir)
+    // Merges the gtf files created by stringtie
+    if (params.merge) {
 
-            merged_gtf = filterAnnotate.out.filter(~/.*_novel_filtered\.gtf/)
-
-            //if (params.custom_annotation) {
-            //   if ( params.custom_annotation ==~ /orfquant/ ) {
-            //        customAnotation(merged_gtf)
-            //   }
-            //}
+        if (sample_gtf_list) {
+            gtf_list = Channel.fromPath("${sample_gtf_list}")
+            gtf_list
+            .splitText(){ it.trim() }
+            .take(1)
+            .ifEmpty { error "Could not find sample GTF files in: ${sample_gtf_list}" }
         }
+
+        mergeGTF(gtf_list, masked_fasta, output_basename, outdir)
+
+        gtf_novel = mergeGTF.out.flatten().filter(~/.*\.combined\.gtf/)
+        gtf_tracking = mergeGTF.out.flatten().filter(~/.*\.tracking/)
+
+        scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
+
+        filterAnnotate(reference_gtf,
+                        refseq_gtf,
+                        gtf_novel,
+                        gtf_tracking,
+                        1,
+                        output_basename,
+                        scripts_dir,
+                        outdir)
+
+        merged_gtf = filterAnnotate.out.filter(~/.*_novel_filtered\.gtf/)
+
+        //if (params.custom_annotation) {
+        //   if ( params.custom_annotation ==~ /orfquant/ ) {
+        //        customAnotation(merged_gtf)
+        //   }
+        //}
+    }
 }

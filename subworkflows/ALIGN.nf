@@ -14,6 +14,7 @@ workflow ALIGN {
     main:
     index_length = indexLength(reads)
 
+    // Map reads to genome using star
     STAR(reads,
         paired_end,
         index_length,
@@ -21,10 +22,11 @@ workflow ALIGN {
         star_index_basedir,
         outdir)
     
+    // Sort star output using samtools
     samtools(STAR.out.bam, outdir)
     bam = samtools.out.sorted_bam
 
     emit:
-    bam
+    bam // Tuple of sample id and sorted bam file
 
 }

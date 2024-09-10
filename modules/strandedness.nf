@@ -9,7 +9,7 @@ process checkStrand {
 
     output:
     env(strand_info, emit: strand)
-    path("**")
+    path("**") // used to copy all process output to the output dir
 
     script:
     if (paired_end == true){

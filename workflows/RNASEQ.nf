@@ -7,10 +7,10 @@ include { FUSIONS } from '../subworkflows/FUSIONS'
 include { EXPRESSION } from '../subworkflows/EXPRESSION'
 
 workflow RNASEQ {
-  
+
     // Give output directory location
     //params.outdir_rnaseq = ${params.outdir}/rnaseq/
-  
+
     // Initialise workflow
 
     // Validate input parameters
@@ -51,8 +51,10 @@ workflow RNASEQ {
 
     //TODO handle bamfiles from samplesheet
     //TODO handle WGS vcfs from samplesheet
-
-    // Step 01: QC
+    
+    /*
+    * Step 01: QC
+    */
     if (params.qc) {
         QC(reads, paired_end, params.outdir)
         star_input = QC.out.trimmed_reads
@@ -86,45 +88,58 @@ workflow RNASEQ {
         }
     }
 
-    // Step 02: Align
+    /*
+    *Step 02: Align
+    */
     if (params.align){
-        //TODO provide all params from main workflow
-        ALIGN(star_input, paired_end, params.outdir)
+        ALIGN(star_input, paired_end, params.reference_gtf, params.star_index_basedir, params.outdir)
         bam = ALIGN.out.bam
     } else {
-         // Look for alignment files
+         // Look for alignment files in case star has been run previously
         default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
         if (params.bam_files) {
-            Channel.fromFilePairs(params.bam_files, size: 1, checkIfExists: true)
-            .set { bam }
+            bam = Channel.fromFilePairs(params.bam_files, size: 1, checkIfExists: true)
         } else if (!file(default_bams).isEmpty()) {
-            Channel.fromFilePairs(default_bams, size: 1, checkIfExists: true)
-            .set { bam }
+            bam = Channel.fromFilePairs(default_bams, size: 1, checkIfExists: true)
         } else {
             bam = null
         }
     }
-
-    // Step 03: Assemble transcriptome
+    
+    /*
+    * Step 03: Assemble transcriptome
+    */
     if (params.assembly || params.merge) {
         if (paired_end) {
-            //TODO provide al params from main workflow
-            ASSEMBLY(strand, bam)
+            ASSEMBLY(strand, 
+            bam,
+            params.sample_gtf_list,
+            params.reference_gtf,
+            params.refseq_gtf,
+            params.chr_exclusion_list,
+            params.masked_fasta,
+            params.output_basename,
+            params.outdir)
+
         } else {
             println "Transcriptome assembly not suported for single stranded data."
             exit 1
         }
     }
-
-    // Step 04: Fusion calling
-    // TODO could we combine mapping for fusions and for txome assembly in one?
+    
+    /*
+    * Step 04: Fusion calling
+    * TODO could we combine mapping for fusions and for txome assembly in one?
+    */
     if (params.fusions) {
         FUSIONS(star_input,
             params.paired_end,
             params.arriba_reference)
     }
 
-    // Step 05: Expression
+    /*
+    * Step 05: Expression
+    */
     if (params.expression) {
         EXPRESSION(star_input,
             bam,
@@ -132,13 +147,18 @@ workflow RNASEQ {
             paired_end,
             params.reference_transcriptome,
             params.reference_gtf,
-            params.outdir,
-            params.output_basename)
+            params.output_basename,
+            params.outdir)
+            
     }
-
-    //Step 06: Immune landscape
-
-    //Step 07: MultiQC
+    
+    /*
+    * Step 06: Immune landscape
+    */
+    
+    /*
+    * Step 07: MultiQC
+    */
 
 }
 
