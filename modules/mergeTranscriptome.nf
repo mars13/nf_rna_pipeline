@@ -6,6 +6,7 @@ process mergeGTF {
     input:
     path gtf_list
     val masked_fasta
+    val reference_gtf
     val output_basename
     val outdir
 
@@ -20,7 +21,7 @@ process mergeGTF {
     mkdir -p ${output_basename}
     gffcompare \
         -V \
-        -r "${reference_gtf}" \
+        -r ${reference_gtf} \
         -s ${masked_fasta} \
         -o "${output_basename}/${output_basename}" \
         -i "${gtf_list}"

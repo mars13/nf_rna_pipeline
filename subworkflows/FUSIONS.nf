@@ -2,39 +2,32 @@ include { starAlignChimeric; runArriba } from '../modules/arriba'
 
 workflow FUSIONS {
     take:
-        reads
-        paired_end
-        arriba_reference
-
+    reads
+    paired_end
+    arriba_reference
+    outdir
 
     main:
-        reference = Channel.fromPath("${arriba_reference}**")
+    // Location to the Arriba reference
+    reference = Channel.fromPath("${arriba_reference}**")
 
-        //Using fromFilePairs to make sure a fa_fai index exists for reference fasta
-        fa = Channel.fromFilePairs("${arriba_reference}**{.fa,.fa.fai}", checkIfExists: true).flatten().filter(~/.*\.fa/)
-        gtf = reference.filter(~/.*\.gtf/)
+    // Using fromFilePairs to make sure a fa_fai index exists for reference fasta
+    fa = Channel.fromFilePairs("${arriba_reference}**{.fa,.fa.fai}", checkIfExists: true).flatten().filter(~/.*\.fa/).first()
+    gtf = reference.filter(~/.*\.gtf/).first()
 
-        //Take optional files and assing empty file if empty
-        blacklist = reference.filter(~/.*blacklist.*/).ifEmpty{ file("EMPTY_BLACKLIST")}
-        whitelist = reference.filter(~/.*known_fusions.*/).ifEmpty{ file("EMTPY_WHITELIST")}
-        protein_domains = reference.filter(~/.*protein_domains.*/).ifEmpty{ file("EMPTY_DOMAINS")}
+    // Take optional files and passing empty file if empty
+    blacklist = reference.filter(~/.*blacklist.*/).ifEmpty{ file("EMPTY_BLACKLIST")}.first()
+    whitelist = reference.filter(~/.*known_fusions.*/).ifEmpty{ file("EMTPY_WHITELIST")}.first()
+    protein_domains = reference.filter(~/.*protein_domains.*/).ifEmpty{ file("EMPTY_DOMAINS")}.first()
 
-        //DEV change to channel.fromFilePairs to get sampleId key
-        wgs = params.wgs_sv ? Channel.fromFilePairs(params.wgs_sv).ifEmpty{ file("EMPTY_WGS")} : Channel.fromPath("EMPTY_WGS")
+    // TODO: test this function with actual data
+    wgs = params.wgs_sv ? Channel.fromFilePairs(params.wgs_sv).ifEmpty{ file("EMPTY_WGS")} : Channel.fromPath("EMPTY_WGS").first()
 
-        starAlignChimeric(reads, paired_end, arriba_reference)
-        //DEV fusion_bams = Channel.fromFilePairs("/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/analysis/arriba/star/*/*.Aligned.out.bam", size: 1)
-        fusion_bams = starAlignChimeric.out.bam
+    // Run star mapper
+    starAlignChimeric(reads, paired_end, arriba_reference, outdir)
+    fusion_bam = starAlignChimeric.out.bam
 
-        fusion_bams
-            .combine(fa)
-            .combine(gtf)
-            .combine(blacklist)
-            .combine(whitelist)
-            .combine(protein_domains)
-            .combine(wgs, by: 0) //hint for when wgs is avail: .combine(wgs, by: 0)
-            .set{ arriba_input }
-
-        runArriba(arriba_input)
+    // Run Arriba
+    runArriba(fusion_bam, fa, gtf, blacklist, whitelist, protein_domains, wgs, outdir)
 
 }

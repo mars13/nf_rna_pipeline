@@ -4,14 +4,14 @@ include { mergeGTF; filterAnnotate; customAnotation } from '../modules/mergeTran
 
 // Groovy function to check if strand type exists and to set the strand type if found
 def getStrandtype(strand) {
-        if (strand ==~ /.*RF\/fr-firststrand/) {
-        strand_type = "rf"
-        } else if (strand ==~ /.*FR\/fr-secondstrand/) {
-            strand_type = "fr"
-        } else {
-            println "Data must be stranded"
-            exit 1
-        }
+    if (strand ==~ /.*RF\/fr-firststrand/) {
+    strand_type = "rf"
+    } else if (strand ==~ /.*FR\/fr-secondstrand/) {
+        strand_type = "fr"
+    } else {
+        println "Data must be stranded"
+        exit 1
+    }
 }
 
 workflow ASSEMBLY {
@@ -73,7 +73,7 @@ workflow ASSEMBLY {
             .ifEmpty { error "Could not find sample GTF files in: ${sample_gtf_list}" }
         }
 
-        mergeGTF(gtf_list, masked_fasta, output_basename, outdir)
+        mergeGTF(gtf_list, masked_fasta, reference_gtf, output_basename, outdir)
 
         gtf_novel = mergeGTF.out.flatten().filter(~/.*\.combined\.gtf/)
         gtf_tracking = mergeGTF.out.flatten().filter(~/.*\.tracking/)

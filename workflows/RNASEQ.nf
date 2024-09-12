@@ -99,7 +99,7 @@ workflow RNASEQ {
         default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
         if (params.bam_files) {
             bam = Channel.fromFilePairs(params.bam_files, size: 1, checkIfExists: true)
-        } else if (!file(default_bams).isEmpty()) {
+        } else if (!file(default_bams).isEmpty()) { // TODO: do we need this function?
             bam = Channel.fromFilePairs(default_bams, size: 1, checkIfExists: true)
         } else {
             bam = null
@@ -133,8 +133,9 @@ workflow RNASEQ {
     */
     if (params.fusions) {
         FUSIONS(star_input,
-            params.paired_end,
-            params.arriba_reference)
+            paired_end,
+            params.arriba_reference,
+            params.outdir)
     }
 
     /*
