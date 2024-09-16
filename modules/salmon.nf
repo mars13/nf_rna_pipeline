@@ -99,3 +99,39 @@ process salmon_tables {
     ${prefix}
     """
 }
+
+process featurecounts {
+    label "featurecounts"
+    publishDir "${outdir}/featurecounts", mode: 'copy'
+
+    input:
+    tuple(val(sample_id), path(bam))
+    val reference_gtf
+    val outdir
+
+    output:
+    path "${sample_id}/*"
+
+    /*
+    optional parameters to be considered:
+    -s : perform strand-specific read counting
+    -t : specify feature type in GTF annotation (exon by default)
+    -g : specify attribute type in GTF annotation (gene_id by default)
+    */
+       
+    script:
+    """
+    mkdir -p ${sample_id}
+    featureCounts \
+    -p \
+    -t gene \
+    -a ${reference_gtf} \
+    -o ${sample_id}/featurecounts_result.out \
+    -T $task.cpus \
+    ${bam}
+    """
+
+
+
+
+}

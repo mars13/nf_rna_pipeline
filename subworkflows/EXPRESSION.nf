@@ -1,4 +1,4 @@
-include { salmon_index; salmon_quasi; salmon_bam; salmon_tables} from '../modules/salmon'
+include { salmon_index; salmon_quasi; salmon_bam; salmon_tables; featurecounts} from '../modules/salmon'
 
 /*
 * Run salmon steps to obtain expression statistics
@@ -40,6 +40,7 @@ workflow EXPRESSION {
     // Run the salmon_tables R script to obtain salmon statistics
     salmon_tables(quant_paths, reference_gtf, output_basename, outdir)
 
-}
+    // Run featurecounts, TODO: figure out what subworkflow to put this 
+    featurecounts(bam, reference_gtf, outdir)
 
-//featurecounts
+}
