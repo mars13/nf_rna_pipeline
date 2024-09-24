@@ -25,6 +25,7 @@ process checkStrand {
         """
     } else {
         println "checkStrand does not currently support single end reads"
+        //TODO: the github page says it does support this 
         """
         check_strandedness \
             -g ${params.reference_gtf} \

@@ -8,6 +8,7 @@ workflow EXPRESSION {
     take:
     reads           // Input read file(s)
     bam             // Bam file created by star align
+    strand
     assembled_gtf
     stringtie_transcriptome
     mode            // Salmon mode to run
@@ -51,6 +52,6 @@ workflow EXPRESSION {
     salmon_tables(quant_paths, input_gtf, output_basename, outdir)
 
     // Run featurecounts, TODO: figure out what subworkflow to put this 
-    featurecounts(bam, input_gtf, outdir)
+    featurecounts(bam, strand, input_gtf, outdir)
 
 }

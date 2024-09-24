@@ -105,6 +105,7 @@ process featurecounts {
 
     input:
     tuple(val(sample_id), path(bam))
+    tuple val(stringtie), val(featurecounts) // Strandedness of input reads
     val reference_gtf
     val outdir
 
@@ -125,6 +126,7 @@ process featurecounts {
     featureCounts \
     -p \
     -t gene \
+    -s ${featurecounts} \
     -a ${reference_gtf} \
     -o ${sample_id}/featurecounts_result.out \
     -T $task.cpus \

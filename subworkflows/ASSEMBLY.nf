@@ -1,19 +1,6 @@
 include { stringtie } from '../modules/stringtie'
 include { mergeGTF; filterAnnotate; customAnotation; transcriptome_fasta } from '../modules/mergeTranscriptome'
 
-
-// Groovy function to check if strand type exists and to set the strand type if found
-def getStrandtype(strand) {
-    if (strand ==~ /.*RF\/fr-firststrand/) {
-    strand_type = "rf"
-    } else if (strand ==~ /.*FR\/fr-secondstrand/) {
-        strand_type = "fr"
-    } else {
-        println "Data must be stranded"
-        exit 1
-    }
-}
-
 workflow ASSEMBLY {
     take:
     strand
@@ -29,8 +16,6 @@ workflow ASSEMBLY {
     main:
     // Run stringtie unless paths to precomputed individual sample GTF are provided
     if (!sample_gtf_list & params.assembly) {
-            // Set strand
-        strand = strand.map{ it -> getStrandtype(it) }
 
         // Locate chromosome exclusion list
         if(chr_exclusion_list) {
@@ -104,6 +89,7 @@ workflow ASSEMBLY {
         stringtie_transcriptome = transcriptome_fasta.out
     }else{
         merged_gtf = null
+        stringtie_transcriptome = null
     }
     emit:
     merged_gtf
