@@ -59,6 +59,7 @@ workflow RNASEQ {
         QC(reads, paired_end, params.outdir)
         star_input = QC.out.trimmed_reads
         strand = QC.out.strandedness
+
     } else {
         default_trimmed_reads = "${params.outdir}/**/*{R1,R2}*_trimmed.{fastq.gz,fq.gz}"
         if (file(default_trimmed_reads).isEmpty()) {
@@ -150,6 +151,7 @@ workflow RNASEQ {
     if (params.expression) {
         EXPRESSION(star_input,
             bam,
+            strand,
             assembled_gtf,
             stringtie_transcriptome,
             params.expression_mode,
