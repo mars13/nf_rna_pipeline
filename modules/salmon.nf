@@ -50,7 +50,6 @@ process salmon_quasi {
         """
 }
 
-
 process salmon_bam {
     label "salmon"
     publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
@@ -95,7 +94,7 @@ process salmon_tables {
     """
     salmon_cohort_tables.R \
     ${quant_paths} \
-    ${params.reference_gtf} \
+    ${gtf} \
     ${prefix}
     """
 }
@@ -118,7 +117,8 @@ process featurecounts {
     -t : specify feature type in GTF annotation (exon by default)
     -g : specify attribute type in GTF annotation (gene_id by default)
     */
-       
+    //TODO: Add strand-specific read counting
+
     script:
     """
     mkdir -p ${sample_id}
@@ -130,8 +130,5 @@ process featurecounts {
     -T $task.cpus \
     ${bam}
     """
-
-
-
 
 }

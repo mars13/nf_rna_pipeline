@@ -1,5 +1,5 @@
 include { stringtie } from '../modules/stringtie'
-include { mergeGTF; filterAnnotate; customAnotation } from '../modules/mergeTranscriptome'
+include { mergeGTF; filterAnnotate; customAnotation; transcriptome_fasta } from '../modules/mergeTranscriptome'
 
 
 // Groovy function to check if strand type exists and to set the strand type if found
@@ -73,6 +73,7 @@ workflow ASSEMBLY {
             .ifEmpty { error "Could not find sample GTF files in: ${sample_gtf_list}" }
         }
 
+        // Run merge process
         mergeGTF(gtf_list, masked_fasta, reference_gtf, output_basename, outdir)
 
         gtf_novel = mergeGTF.out.flatten().filter(~/.*\.combined\.gtf/)
@@ -80,6 +81,7 @@ workflow ASSEMBLY {
 
         scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
 
+        // Run filter annotate r script
         filterAnnotate(reference_gtf,
                         refseq_gtf,
                         gtf_novel,
@@ -89,12 +91,21 @@ workflow ASSEMBLY {
                         scripts_dir,
                         outdir)
 
-        merged_gtf = filterAnnotate.out.filter(~/.*_novel_filtered\.gtf/)
+        merged_gtf = filterAnnotate.out.gtf
 
         //if (params.custom_annotation) {
         //   if ( params.custom_annotation ==~ /orfquant/ ) {
         //        customAnotation(merged_gtf)
         //   }
         //}
+
+
+        transcriptome_fasta(gtf_novel, masked_fasta, outdir)
+        stringtie_transcriptome = transcriptome_fasta.out
+    }else{
+        merged_gtf = null
     }
+    emit:
+    merged_gtf
+    stringtie_transcriptome
 }

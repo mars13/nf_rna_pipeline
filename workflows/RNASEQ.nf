@@ -121,10 +121,16 @@ workflow RNASEQ {
             params.output_basename,
             params.outdir)
 
+            assembled_gtf = ASSEMBLY.out.merged_gtf
+            stringtie_transcriptome = ASSEMBLY.out.stringtie_transcriptome
+
         } else {
+            assembled_gtf = null
             println "Transcriptome assembly not suported for single stranded data."
             exit 1
         }
+    } else{
+        assembled_gtf = null
     }
     
     /*
@@ -144,6 +150,8 @@ workflow RNASEQ {
     if (params.expression) {
         EXPRESSION(star_input,
             bam,
+            assembled_gtf,
+            stringtie_transcriptome,
             params.expression_mode,
             paired_end,
             params.reference_transcriptome,
@@ -152,7 +160,6 @@ workflow RNASEQ {
             params.outdir)
             
     }
-    
     /*
     * Step 06: Immune landscape
     */

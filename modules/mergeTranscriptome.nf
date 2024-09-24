@@ -44,7 +44,9 @@ process filterAnnotate {
     val outdir
 
     output:
-    path "**${output_basename}*"
+    path "${output_basename}_novel_filtered.gtf", emit: gtf
+    path "${output_basename}_novel_filtered.log"
+
 
     script:
     """
@@ -86,3 +88,20 @@ process customAnotation {
     """
 }
 
+process transcriptome_fasta {
+    label "gffread"
+    publishDir "${outdir}/stringtie", mode: 'copy'
+
+    input:
+    val stringtie_merged_gtf
+    val reference_fasta
+    val outdir
+
+    output:
+    file "stringtie_transcriptome.fa"
+
+    script:
+    """
+    gffread -w stringtie_transcriptome.fa -g ${reference_fasta} ${stringtie_merged_gtf}
+    """
+}

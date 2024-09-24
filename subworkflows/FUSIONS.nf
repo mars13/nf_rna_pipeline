@@ -1,4 +1,4 @@
-include { starAlignChimeric; runArriba } from '../modules/arriba'
+include { starAlignChimeric; runArriba} from '../modules/arriba'
 
 workflow FUSIONS {
     take:
@@ -29,5 +29,4 @@ workflow FUSIONS {
 
     // Run Arriba
     runArriba(fusion_bam, fa, gtf, blacklist, whitelist, protein_domains, wgs, outdir)
-
 }

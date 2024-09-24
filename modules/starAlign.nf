@@ -82,7 +82,7 @@ process STAR {
 
 // Define process for getting mapping stats, sorted bam and .bai with Samtools
 process samtools {
-    label "alignment"
+    label "samtools"
     publishDir "${outdir}/star/", mode: 'copy'
 
     input: 

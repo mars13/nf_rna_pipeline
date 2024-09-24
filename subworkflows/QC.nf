@@ -4,9 +4,9 @@ include { checkStrand } from '../modules/strandedness'
 //Run fastp on the input reads and obatains their strandedness
 workflow QC {
     take:
-    reads      // input fastq files
-    paired_end // bool, true if paired end data
-    outdir     // path to output dir
+    reads      // Input fastq files
+    paired_end // Bool, true if paired end data
+    outdir     // Path to output dir
 
     main:
     // Run fastp and sets the output fastq file to variable trimmed_reads
