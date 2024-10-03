@@ -85,7 +85,7 @@ workflow ASSEMBLY {
         //}
 
 
-        transcriptome_fasta(gtf_novel, masked_fasta, outdir)
+        transcriptome_fasta(merged_gtf, masked_fasta, outdir)
         stringtie_transcriptome = transcriptome_fasta.out
     }else{
         merged_gtf = null
