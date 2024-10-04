@@ -18,6 +18,7 @@ test/log/*
 test/documentation/*.txt
 test/scripts/*
 test/documentation/samplesheet.csv
+test/documentation/aml_*
 
 #Ignore nextflow work and logs
 work/*
