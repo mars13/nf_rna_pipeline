@@ -39,6 +39,7 @@ process filterAnnotate {
     path gtf_novel
     path gtf_tracking
     val min_occurrence
+    val min_tpm
     val output_basename
     val scripts_dir
     val outdir
@@ -57,6 +58,7 @@ process filterAnnotate {
     "${gtf_novel}" \
     "${gtf_tracking}" \
     "${min_occurrence}" \
+    "${min_tpm}" \
     "${output_basename}_novel_filtered" \
     "${scripts_dir}"
     """
