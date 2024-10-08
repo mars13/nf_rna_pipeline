@@ -49,6 +49,7 @@ workflow EXPRESSION {
     }
 
     // Run the salmon_tables R script to obtain salmon statistics
+    // TODO: check if removing gene_name NA values is correct
     salmon_tables(quant_paths, input_gtf, output_basename, outdir)
 
     // Run featurecounts, TODO: figure out what subworkflow to put this 

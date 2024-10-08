@@ -11,6 +11,8 @@ workflow ASSEMBLY {
     chr_exclusion_list
     masked_fasta
     output_basename
+    min_occurence
+    min_tpm
     outdir
 
     main:
@@ -67,15 +69,14 @@ workflow ASSEMBLY {
         scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
 
         // Run filter annotate r script
-        // TODO add min_occurence and min_tpm from params.config
         filterAnnotate(reference_gtf,
                         refseq_gtf,
                         gtf_novel,
                         gtf_tracking,
-                        1, //substitue by min_occurence
-                        1, //substitute by min_tpm
+                        min_occurence,
+                        min_tpm,
                         output_basename,
-                        scripts_dir,
+                        "${projectDir}/bin/",
                         outdir)
 
         merged_gtf = filterAnnotate.out.gtf

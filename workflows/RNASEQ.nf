@@ -120,6 +120,8 @@ workflow RNASEQ {
             params.chr_exclusion_list,
             params.masked_fasta,
             params.output_basename,
+            params.min_occurence,
+            params.min_tpm,
             params.outdir)
 
             assembled_gtf = ASSEMBLY.out.merged_gtf

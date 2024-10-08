@@ -59,9 +59,13 @@ write_tsv <- function(data, file) {
 
 #Read gtf_file
 gtf_data <- read_delim(gtf_file, delim = "\t", col_names = FALSE, comment = "#")
+head(gtf_data)
 
 # Get tx2gene object
 tx2gene <- get_tx2gene(gtf_data)
+
+# Remove NA values from gene_name
+tx2gene <- tx2gene[!is.na(tx2gene$gene_name), ]
 
 # Get the list of quant.sf files
 #quant_files <- get_quant_files(base_dir)
@@ -76,17 +80,20 @@ if (length(quant_files) == 0) {
 # Create a named vector for files
 names(quant_files) <- basename(dirname(quant_files))
 print(names(quant_files))
+print(quant_files)
+head(tx2gene)
 
 # Import the quantification files using tximport
 txi <- tximport(files = quant_files, type = "salmon", txOut = TRUE)
-
+head(txi)
 
 # Summarise gene counts by gene_id
 txi.id <- summarizeToGene(txi, tx2gene[,c(1:2)], ignoreTxVersion = TRUE)
+head(txi.id)
 
 # Summarise gene counts by gene_name
 txi.name <- summarizeToGene(txi, tx2gene[,c(1,3)], ignoreTxVersion = TRUE)
-
+head(txi.name)
 
 # Define output file names
 counts_file <- file.path(paste0(prefix, "_transcript_counts.tsv"))
