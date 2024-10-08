@@ -47,11 +47,11 @@ process filterAnnotate {
     output:
     path "${output_basename}_novel_filtered.gtf", emit: gtf
     path "${output_basename}_novel_filtered.log"
+    path "${output_basename}_novel_filtered.tsv"
 
 
     script:
     """
-    #mkdir -p plots
     filter_annotate.R \
     "${reference_gtf}" \
     "${refseq_gtf}" \

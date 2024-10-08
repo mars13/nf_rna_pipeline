@@ -50,7 +50,7 @@ functions_file <- paste0(scripts_dir, "/filter_annotate_functions.R")
 source(functions_file)
 
 
-filterGTF <- function(gtf_refseq_basename, gtf_ref_path, min_occurrence, novel_gtf_path, tracking_file, output_prefix) {
+filterGTF <- function(gtf_refseq_basename, gtf_ref_path, min_occurrence, min_tpm,novel_gtf_path, tracking_file, output_prefix) {
   # Load reference GTF file for comparison and annotation purposes
   gtf_reference <- rtracklayer::import.gff(gtf_ref_path, colnames = c(
     "type", "source", "gene_id", "gene_name", "gene_biotype", "transcript_id", "transcript_name"
@@ -129,7 +129,7 @@ filterGTF <- function(gtf_refseq_basename, gtf_ref_path, min_occurrence, novel_g
 
 
   # FILTER: Keep transcripts based on minimum occurrence and expression threshold
-  occurence_mask <- filter_tx_occurrence(novel_gtf_df, min_occurence = 2, min_tpm = 1)
+  occurence_mask <- filter_tx_occurrence(novel_gtf_df, min_occurence = min_occurence , min_tpm = min_tpm)
   transcripts_keep <- novel_gtf_df[occurence_mask, ]$transcript_id
 
   novel_gtf_df <- novel_gtf_df[occurence_mask, ]
@@ -233,12 +233,12 @@ filterGTF <- function(gtf_refseq_basename, gtf_ref_path, min_occurrence, novel_g
   ## Add filtering steps
   cat("Novel transcripts - stranded, not in scaffolds:", "\t", start_tx_num, "\n", file = output_log_path, append = T)
   cat("Filtered monoexonic:", "\t", filt_monoexonic, "\n", file = output_log_path, append = T)
-  cat("Filtered min", min_tpm, "TPM in", min_occurrence, "samples:", "\t", filt_occurrence, "\n", file = output_log_path, append = T)
+  cat("Filtered below expression and occurrence requirement:", "\t", filt_occurrence, "\n", file = output_log_path, append = T)
   cat("Filtered reference overlap:", "\t", length(unique(ref_overlap_txs)), "\n", file = output_log_path, append = T)
   cat("Filtered class I same strand overlap:", "\t", length(unique(same_strand_i_txs)), "\n", file = output_log_path, append = T)
-  cat("__________________________________________", file = output_log_path, append = T)
+  cat("__________________________________________", "\n", file = output_log_path, append = T)
   cat("TOTAL NOVEL TRANSCRIPTS ADDED TO REFERENCE:", "\t", final_tx, "\n", file = output_log_path, append = T)
-  cat("__________________________________________", file = output_log_path, append = T)
+  cat("__________________________________________","\n", file = output_log_path, append = T)
   ## Add extra warnings
   cat("Info - Genes with transcripts on multiple strands:", "\t", genes_with_multiple_strands, "\n", file = output_log_path, append = T)
   cat("Info - RefSeq xr overlap:", "\t", xr_overlap, "\n", file = output_log_path, append = T)
@@ -265,6 +265,7 @@ filterGTF(
   gtf_refseq_basename = gtf_refseq_basename,
   gtf_ref_path = gtf_ref_loc,
   min_occurrence = min_occurrence,
+  min_tpm = min_tpm,
   novel_gtf_path = gtf_novel_file,
   tracking_file = tracking_file,
   output_prefix = outfile
