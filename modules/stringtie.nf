@@ -19,7 +19,10 @@ process stringtie {
     // Check if reads are unstranded and exit if they are
     if (stringtie == "unstranded") {
         println "Data must be stranded"
-        exit 1 
+        // exit 1 
+        strand = ""
+    }else{
+        strand = "--${stringtie}"
     }
 
     // Groovy function to add the chromosome exclusion list to the stringtie command
@@ -28,7 +31,7 @@ process stringtie {
     """
     stringtie ${bam[0]} \
         -G ${reference_gtf} \
-        --${stringtie} \
+        ${strand}\
         -M 0.45 \
         -a 9 \
         -m 50 \
