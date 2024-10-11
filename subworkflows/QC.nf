@@ -9,7 +9,7 @@ def getStrandtype(strand) {
         strand_type = tuple("fr", 2)
     } else {
         strand_type = tuple("unstranded", 0)
-        println "WARNING: Data is unstranded"
+        //println "WARNING: Data is unstranded"
        // exit 1
     }
 }
