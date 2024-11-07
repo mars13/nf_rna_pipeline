@@ -53,6 +53,7 @@ workflow EXPRESSION {
     salmon_tables(quant_paths, input_gtf, output_basename, outdir)
 
     // Run featurecounts, TODO: figure out what subworkflow to put this 
-    featurecounts(bam, strand, input_gtf, outdir)
-
+    if (params.align){
+       featurecounts(bam, strand, input_gtf, outdir)
+    }
 }
