@@ -19,14 +19,16 @@ workflow QC {
     take:
     reads      // Input fastq files
     paired_end // Bool, true if paired end data
+    kallisto_index // Path to the kallisto index file
+    reference_gtf // Path to the reference gtf 
     outdir     // Path to output dir
 
     main:
     // Run fastp and sets the output fastq file to variable trimmed_reads
     trimmed_reads = fastp(reads, paired_end, outdir).fastq_files
     
-     // Run strandedness
-    strand = checkStrand(reads, paired_end).strand
+    // Run strandedness
+    strand = checkStrand(reads, paired_end, kallisto_index, reference_gtf, outdir).strand
     // Create a file containing the strand of all files
     checkStrand.out
             .strand

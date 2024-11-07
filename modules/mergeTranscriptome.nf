@@ -65,6 +65,7 @@ process filterAnnotate {
 }
 
 // TODO FIX Create custom annotation for RiboseQC and ORFquant OR do it in Ribo-seq pipeline
+// TODO: discuss this function
 process customAnotation {
     clusterOptions '--mem=10G --cpus-per-task=2 --gres=tmpspace:50G --time=24:00:00'
     containerOptions '/hpc:/hpc",${TMPDIR}:${TMPDIR} --env "LC_CTYPE=en_US.UTF-8'

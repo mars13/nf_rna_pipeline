@@ -56,7 +56,11 @@ workflow RNASEQ {
     * Step 01: QC
     */
     if (params.qc) {
-        QC(reads, paired_end, params.outdir)
+        QC(reads, 
+        paired_end,
+        params.kallisto_index,
+        params.reference_gtf,
+        params.outdir)
         star_input = QC.out.trimmed_reads
         strand = QC.out.strandedness
 
@@ -134,6 +138,7 @@ workflow RNASEQ {
         }
     } else{
         assembled_gtf = null
+        stringtie_transcriptome = null
     }
     
     /*
