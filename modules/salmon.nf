@@ -33,7 +33,7 @@ process salmon_quasi {
             quant_input = """-1 "${reads[0]}" -2 "${reads[1]}" """
         } else {
             // Set salmon quant single end input arguments
-            quant_input = """-i "${salmon_index}" """
+            quant_input = """-r "${reads[0]}" """
         }
 
         """
