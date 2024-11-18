@@ -65,7 +65,7 @@ workflow RNASEQ {
         strand = QC.out.strandedness
 
     } else {
-        default_trimmed_reads = "${params.outdir}/**/*{R1,R2}*_trimmed.{fastq.gz,fq.gz}"
+        default_trimmed_reads = "${params.outdir}/**/*_trimmed.{fastq.gz,fq.gz}"
         if (file(default_trimmed_reads).isEmpty()) {
             star_input = reads
             log.info "No trimmed reads found from QC step, using input reads."
