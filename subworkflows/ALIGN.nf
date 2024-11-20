@@ -25,8 +25,9 @@ workflow ALIGN {
     // Sort star output using samtools
     samtools(STAR.out.bam, outdir)
     bam = samtools.out.sorted_bam
+    bam_list = samtools.out.sorted_bam.toList()
 
     emit:
     bam // Tuple of sample id and sorted bam file
-
+    bam_list // All bam tuples combined into one big tuple
 }

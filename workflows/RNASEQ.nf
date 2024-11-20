@@ -99,6 +99,7 @@ workflow RNASEQ {
     if (params.align){
         ALIGN(star_input, paired_end, params.reference_gtf, params.star_index_basedir, params.outdir)
         bam = ALIGN.out.bam
+        bam_list = ALIGN.out.bam_list
     } else {
          // Look for alignment files in case star has been run previously
         default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
@@ -118,6 +119,7 @@ workflow RNASEQ {
         if (paired_end) {
             ASSEMBLY(strand, 
             bam,
+            bam_list,
             params.sample_gtf_list,
             params.reference_gtf,
             params.refseq_gtf,

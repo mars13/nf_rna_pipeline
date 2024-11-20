@@ -11,8 +11,8 @@ process checkStrand {
     val outdir
 
     output:
-    env(strand_info, emit: strand)
-    path("**") // used to copy all process output to the output dir
+    env strand_info, emit: strand
+    path "**"  // used to copy all process output to the output dir
 
     script:
     if (paired_end == true){

@@ -1,7 +1,7 @@
 // Define process for trimming and quality control (fastp)
 process fastp {
     label "qc"
-    publishDir "${outdir}", mode: 'copy'
+    //publishDir "${outdir}", mode: 'copy'
 
     input:
     tuple val(sample_id), path(reads) // Tuple of sample id and fastq read files

@@ -1,4 +1,22 @@
+process aletsch{
+    label "aletsch"
+    publishDir "${outdir}/aletsch", mode: 'copy'
 
+    input:
+    val(bam)
+    val outdir
+   
+    output:
+    path "test.txt"
+
+    script:
+    """
+    echo "${bam} ${bam}.bai  paired"> test.txt
+    """
+
+
+
+}
 
 // Define process for stringtie
 process stringtie {

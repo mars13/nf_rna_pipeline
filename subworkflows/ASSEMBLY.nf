@@ -1,3 +1,4 @@
+include { aletsch } from '../modules/aletsch'
 include { stringtie } from '../modules/stringtie'
 include { mergeGTF; filterAnnotate; customAnotation; transcriptome_fasta } from '../modules/mergeTranscriptome'
 
@@ -5,6 +6,7 @@ workflow ASSEMBLY {
     take:
     strand
     bam
+    bam_list
     sample_gtf_list
     reference_gtf
     refseq_gtf
@@ -26,6 +28,9 @@ workflow ASSEMBLY {
         } else {
             chromosome_exclusion_list = null
         }
+
+        // Run aletsch
+        aletsch(bam_list,outdir)
 
         // Run stringtie
         stringtie(strand, bam, chromosome_exclusion_list, reference_gtf, outdir)
