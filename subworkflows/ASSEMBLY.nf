@@ -13,7 +13,7 @@ workflow ASSEMBLY {
     chr_exclusion_list
     masked_fasta
     output_basename
-    min_occurence
+    min_occurrence
     min_tpm
     outdir
 
@@ -78,7 +78,7 @@ workflow ASSEMBLY {
                         refseq_gtf,
                         gtf_novel,
                         gtf_tracking,
-                        min_occurence,
+                        min_occurrence,
                         min_tpm,
                         output_basename,
                         "${projectDir}/bin/",

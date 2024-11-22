@@ -129,12 +129,12 @@ filterGTF <- function(gtf_refseq_basename, gtf_ref_path, min_occurrence, min_tpm
 
 
   # FILTER: Keep transcripts based on minimum occurrence and expression threshold
-  occurence_mask <- filter_tx_occurrence(novel_gtf_df, min_occurence = min_occurence , min_tpm = min_tpm)
-  transcripts_keep <- novel_gtf_df[occurence_mask, ]$transcript_id
+  occurrence_mask <- filter_tx_occurrence(novel_gtf_df, min_occurrence = min_occurrence , min_tpm = min_tpm)
+  transcripts_keep <- novel_gtf_df[occurrence_mask, ]$transcript_id
 
-  novel_gtf_df <- novel_gtf_df[occurence_mask, ]
+  novel_gtf_df <- novel_gtf_df[occurrence_mask, ]
 
-  # LOGGING: Store transcripts failing occurence threshold
+  # LOGGING: Store transcripts failing occurrence threshold
   filt_occurrence <- start_tx_num - filt_monoexonic - length(unique(transcripts_keep))
 
 

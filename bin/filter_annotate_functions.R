@@ -27,15 +27,15 @@ count_mono_exonics <- function(gtf) {
 
 filter_tx_occurrence <-
   function(gtf_df_tracking,
-           min_occurence = 1,
+           min_occurrence = 1,
            min_tpm = 1) {
     # Input:
     # gtf_df_tracking = data.frame with output from GFFcompare
     #                   with tracking information for TPM values
-    # min_occurence = integer (default = 1) how many samples should share a transfrag
+    # min_occurrence = integer (default = 1) how many samples should share a transfrag
     # min_tpm = integer (default = 1) how much coverage each sample should have to count as covered
     #
-    # Subsets transcripts on minimal occurence and expression parameter.
+    # Subsets transcripts on minimal occurrence and expression parameter.
 
     tpm_cols <- colnames(gtf_df_tracking)[grepl("TPM_q", colnames(gtf_df_tracking))]
 

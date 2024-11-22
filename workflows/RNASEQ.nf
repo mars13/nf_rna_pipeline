@@ -117,7 +117,7 @@ workflow RNASEQ {
     */
     if (params.assembly || params.merge) {
         if (paired_end) {
-            ASSEMBLY(strand, 
+            ASSEMBLY(strand,
             bam,
             bam_list,
             params.sample_gtf_list,
@@ -126,7 +126,7 @@ workflow RNASEQ {
             params.chr_exclusion_list,
             params.masked_fasta,
             params.output_basename,
-            params.min_occurence,
+            params.min_occurrence,
             params.min_tpm,
             params.outdir)
 
@@ -135,7 +135,7 @@ workflow RNASEQ {
 
         } else {
             assembled_gtf = null
-            println "Transcriptome assembly not suported for single stranded data."
+            println "Transcriptome assembly not supported for single stranded data."
             exit 1
         }
     } else{

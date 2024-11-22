@@ -160,6 +160,21 @@
                     "type": "string",
                     "description": "Basename for the merged GTF, custom annotation files and expression tables",
                     "default": "transcriptome_full"
+                },
+                "min_tpm": {
+                    "type": "integer",
+                    "description": "Minimum TPM value to include a transcript in the assembled transcriptome",
+                    "default": 1
+                },
+                "min_occurrence": {
+                    "type": "integer",
+                    "description": "Minimum occurrence to include a transcript in the assembled transcriptome",
+                    "default": 1
+                },
+                "stringtie_expression": {
+                    "type": "boolean",
+                    "description": "Wether to use assembled transcripts (not in the reference for expression quantification",
+                    "default": false
                 }
             }
         },
