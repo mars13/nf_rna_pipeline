@@ -48,12 +48,10 @@ workflow EXPRESSION {
         exit 1
     }
 
-    // Run the salmon_tables R script to obtain salmon statistics
-    // TODO: check if removing gene_name NA values is correct
-    // TODO: add check to see if gene names are available in the transcriptome file
-    //salmon_tables(quant_paths, input_gtf, output_basename, outdir)
+    // Run the salmon_tables Rscript to obtain expression tables
+    salmon_tables(quant_paths, input_gtf, output_basename, outdir)
 
-    // Run featurecounts, TODO: figure out what subworkflow to put this 
+    // Run featurecounts, TODO: figure out what subworkflow to put this
     if (params.align){
        featurecounts(bam, strand, input_gtf, outdir)
     }
