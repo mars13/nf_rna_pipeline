@@ -14,6 +14,36 @@ def printHeader () {
 }
 
 
+def check_duplicate_samples(String filePath) {
+    // Empty set to store unique sample ids
+    def unique_values = new HashSet()
+    def has_duplicates = false
+
+    // Read the CSV file 
+    new File(filePath).eachLine { line ->
+        // Skip empty lines
+        if (line.trim()) {
+            def columns = line.split(',')
+            // Obtain values from first columns
+            def first_column_value = columns[0].trim()
+
+            // Check if the value is unique
+            if (unique_values.contains(first_column_value)) {
+                // If duplicate found end loop and return true
+                has_duplicates = true
+                return
+            } else {
+                // Add value to set
+                unique_values.add(first_column_value)
+            }
+        }
+    }
+
+    // Return the result: true if duplicates found, false otherwise
+    return has_duplicates
+}
+
+
 def check_files(name, path, type) {
     if(!path) {
         error "When running merge without assembly you must provide `${name}`."
@@ -46,7 +76,7 @@ def check_files(name, path, type) {
 
 
 def checkInputFiles() {
-    //Check inputs
+    // Check inputs
     default_strand =  "${params.outdir}/check_strandedness/strandedness_all.txt"
     if (!params.qc && ( params.align || params.assembly )) {
         if (!params.strand_info && file(default_strand, type : "file").exists()) {
@@ -61,7 +91,7 @@ def checkInputFiles() {
         }
     }
 
-    //Locate bams
+    // Locate bams
     default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
     bam_avail = true
     if (!params.align) {
@@ -74,20 +104,20 @@ def checkInputFiles() {
         }
     }
 
-    //Check reference_gtf
+    // Check reference_gtf
     check_files("reference_gtf", params.reference_gtf, "file")
 
-    //Check kallisto index
+    // Check kallisto index
     if (params.qc){
         check_files("kallisto_index", params.kallisto_index, "file")
     }
 
-    //Check star_index_basedir
+    // Check star_index_basedir
     if (params.align){
         check_files("star_index_basedir", params.star_index_basedir, "dir")
     }
 
-    //Check bams and references for assembly steps
+    // Check bams and references for assembly steps
     if (params.assembly){
         if (!bam_avail) {
             error  """
@@ -100,7 +130,7 @@ def checkInputFiles() {
         check_files("masked_fasta", "${params.masked_fasta}", "file")
     }
 
-    //Check sample gtf list for merge without assembly
+    // Check sample gtf list for merge without assembly
     if (!params.assembly && params.merge) {
         if(!params.sample_gtf_list) {
             error "When running merge without assembly you must provide `sample_gtf_list`.".stripIndent()
@@ -112,12 +142,12 @@ def checkInputFiles() {
         }
     }
 
-    //Check references for build_annotaiton
+    // Check references for build_annotaiton
     if (params.build_annotation) {
         check_files("twobit", "${params.twobit}*", "file")
     }
 
-    //Check fusion parameters
+    // Check fusion parameters
     if (params.fusions){
         check_files("arriba_reference", params.arriba_reference, "dir")
         check_files("arriba_reference STAR_index_*", "${params.arriba_reference}STAR_index*", "dir")
@@ -129,7 +159,7 @@ def checkInputFiles() {
         }
     }
 
-    //Check expression parameters
+    // Check expression parameters
     if (params.expression) {
         assert params.expression_mode in ["sq", "sa", "sqfc", "safc"], "`expression_mode` must be one of the following: sq, sa, sqfc, safc"
 
@@ -138,6 +168,13 @@ def checkInputFiles() {
         }
     }
 
+    // Check for duplicate sample ids
+    if (check_duplicate_samples(params.input)) {
+        error "\nERROR: Duplicate sample_ids found in the input samplesheet\n"
+    } 
+
     log.info "\n==========================\n"
 }
+
+
 
