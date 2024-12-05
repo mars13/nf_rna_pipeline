@@ -4,18 +4,18 @@ include { mergeGTF; filterAnnotate; customAnotation; transcriptome_fasta } from 
 
 workflow ASSEMBLY {
     take:
-    strand
-    bam
-    bam_list
-    sample_gtf_list
-    reference_gtf
-    refseq_gtf
-    chr_exclusion_list
-    masked_fasta
-    output_basename
-    min_occurrence
-    min_tpm
-    outdir
+    strand             // Tuple containing strand info
+    bam                // Bam file created by star align
+    bam_list           // List of all bam files created by star
+    sample_gtf_list    // List of previously created gtf files to be merged
+    reference_gtf      // Path to input reference gtf file
+    refseq_gtf         // Path to input refseq gtf file
+    chr_exclusion_list // Path to chromosome exclustion list
+    masked_fasta       // Path to input reference fasta file
+    output_basename    // Val containing the id/name given to the output files
+    min_occurrence     // Val contatining the minimum occurence of transcripts for filtering
+    min_tpm            // Val containing the minium tpm of transcripts for filtering
+    outdir             // Path to output directory
 
     main:
     // Run stringtie unless paths to precomputed individual sample GTF are provided
@@ -29,8 +29,10 @@ workflow ASSEMBLY {
             chromosome_exclusion_list = null
         }
 
-        // Run aletsch
-        aletsch(bam_list,outdir)
+        // Run aletsch if bam_list is not null
+        if(bam_list != null){
+            aletsch(bam_list, outdir)
+        }
 
         // Run stringtie
         stringtie(strand, bam, chromosome_exclusion_list, reference_gtf, outdir)
@@ -42,10 +44,10 @@ workflow ASSEMBLY {
         // Store gtflist in outputdir
         // replaceFirst is a groovy statement to replace part of a string based on a pattern
         gtf_paths.map { it -> it.replaceFirst("${workDir}/[^/]*/[^/]*/", "${outdir}/stringtie/") } //Replace the work dir path with the output dir
-        .collectFile(
-            name: 'gtflist.txt',
-            storeDir: "${outdir}/stringtie/",
-            newLine: true, sort: true )
+            .collectFile(
+                name: 'gtflist.txt',
+                storeDir: "${outdir}/stringtie/",
+                newLine: true, sort: true )
 
         // Store gtflist to workdir
         gtf_list = gtf_paths.collectFile(
@@ -57,6 +59,7 @@ workflow ASSEMBLY {
     // Merges the gtf files created by stringtie
     if (params.merge) {
 
+        // Load gtf list file if not null
         if (sample_gtf_list) {
             gtf_list = Channel.fromPath("${sample_gtf_list}")
             gtf_list
@@ -68,9 +71,10 @@ workflow ASSEMBLY {
         // Run merge process
         mergeGTF(gtf_list, masked_fasta, reference_gtf, output_basename, outdir)
 
-        gtf_novel = mergeGTF.out.flatten().filter(~/.*\.combined\.gtf/)
-        gtf_tracking = mergeGTF.out.flatten().filter(~/.*\.tracking/)
+        gtf_novel = mergeGTF.out.merged_gtf
+        gtf_tracking = mergeGTF.out.tracking
 
+        // Set channel containing paths to r scripts
         scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
 
         // Run filter annotate r script
@@ -84,7 +88,7 @@ workflow ASSEMBLY {
                         "${projectDir}/bin/",
                         outdir)
 
-        merged_gtf = filterAnnotate.out.gtf
+        merged_filtered_gtf = filterAnnotate.out.gtf
 
         //if (params.custom_annotation) {
         //   if ( params.custom_annotation ==~ /orfquant/ ) {
@@ -92,14 +96,13 @@ workflow ASSEMBLY {
         //   }
         //}
 
-
-        transcriptome_fasta(merged_gtf, masked_fasta, outdir)
-        stringtie_transcriptome = transcriptome_fasta.out
+        transcriptome_fasta(merged_filtered_gtf, masked_fasta, outdir)
+        assembled_transcriptome_fasta = transcriptome_fasta.out
     }else{
-        merged_gtf = null
-        stringtie_transcriptome = null
+        merged_filtered_gtf = null
+        assembled_transcriptome_fasta = null
     }
     emit:
-    merged_gtf
-    stringtie_transcriptome
+    merged_filtered_gtf
+    assembled_transcriptome_fasta
 }

@@ -1,23 +1,3 @@
-process aletsch{
-    label "aletsch"
-    publishDir "${outdir}/aletsch", mode: 'copy'
-
-    input:
-    val(bam)
-    val outdir
-   
-    output:
-    path "test.txt"
-
-    script:
-    """
-    echo "${bam} ${bam}.bai  paired"> test.txt
-    """
-
-
-
-}
-
 // Define process for stringtie
 process stringtie {
     label "assembly"
@@ -25,10 +5,10 @@ process stringtie {
 
     input:
     tuple val(stringtie), val(featurecounts) // Strandedness of input reads
-    tuple val(sample_id), path(bam) // Tuple of sample id and star result bam
-    val chr                         // Chromosome exclusion list 
-    val reference_gtf               // Reference gtf file location
-    val outdir
+    tuple val(sample_id), path(bam)          // Tuple of sample id and star result bam
+    val chr                                  // Chromosome exclusion list 
+    val reference_gtf                        // Reference gtf file location
+    val outdir                               // Path to output directory
 
     output:
     path "${sample_id}/${sample_id}.gtf" // Path to the output gtf of stringtie
@@ -36,7 +16,7 @@ process stringtie {
     script:
     // Check if reads are unstranded and exit if they are
     if (stringtie == "unstranded") {
-        println "Data must be stranded"
+        println "Sample given to stringtie contains unstranded reads"
         // exit 1 
         strand = ""
     }else{
