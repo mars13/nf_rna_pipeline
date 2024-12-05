@@ -6,22 +6,23 @@ include { salmon_index; salmon_quasi; salmon_bam; salmon_tables; featurecounts} 
 workflow EXPRESSION {
 
     take:
-    reads           // Input read file(s)
+    reads           // Tuple of sample id and input read file(s)
     bam             // Bam file created by star align
-    strand
-    assembled_gtf
-    stringtie_transcriptome
+    strand          // Tuple containing strand info
+    assembled_gtf   // Path to assembled transcriptome gtf file
+    assembled_fasta // Path to assembled transcriptome sequences file
     mode            // Salmon mode to run
     paired_end      // Bool, is data paired end or not
     transcriptome   // Path to the input transcriptome file
-    reference_gtf   // Path to the reference gtf file
+    reference_gtf   // Path to the input reference gtf file
     output_basename // File prefix given to the salmon_tables results
     outdir          // Path to output directory
 
     main:
-    if (params.stringtie_expression && assembled_gtf != null){
+    // Use stringtie created transcriptome if set to true, otherwise use reference
+    if (params.created_transcriptome_expression && assembled_gtf != null){
         input_gtf = assembled_gtf.first()
-        input_transcriptome = stringtie_transcriptome.first()
+        input_transcriptome = assembled_transcriptome.first()
     }
     else{
         input_gtf = reference_gtf
@@ -51,8 +52,10 @@ workflow EXPRESSION {
     // Run the salmon_tables Rscript to obtain expression tables
     salmon_tables(quant_paths, input_gtf, output_basename, outdir)
 
-    // Run featurecounts, TODO: figure out what subworkflow to put this
-    if (params.align){
-       featurecounts(bam, strand, input_gtf, outdir)
+    // Run featurecounts if bam files for input exist and strand info is available
+    if (bam != null && params.qc){
+       featurecounts(bam, strand, reference_gtf, outdir)
+    } else{
+        println "Featurecounts warning: No BAM files or strand info found"
     }
 }

@@ -18,14 +18,14 @@ process salmon_quasi {
     publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
 
     input:
-    tuple(val(sample_id), path(reads))
-    val paired_end
-    path salmon_index
-    val outdir
+    tuple(val(sample_id), path(reads)) // Tuple of sample id and input read file(s)
+    val paired_end                     // Bool, is data paired end or not
+    path salmon_index                  // Path to the salmon index
+    val outdir                         // Path to the output directory
 
     output:
     path "${sample_id}/quant.sf", emit: quant
-    path "${sample_id}/*"
+    //path "${sample_id}/*"
 
     script:
         if (paired_end == true){
@@ -104,10 +104,10 @@ process featurecounts {
     publishDir "${outdir}/featurecounts", mode: 'copy'
 
     input:
-    tuple(val(sample_id), path(bam))
+    tuple(val(sample_id), path(bam))         // Tuple of sample id and input read file(s)
     tuple val(stringtie), val(featurecounts) // Strandedness of input reads
-    val reference_gtf
-    val outdir
+    val reference_gtf                        // Path to the input reference gtf file
+    val outdir                               // Path to output directory
 
     output:
     path "${sample_id}/*"
