@@ -1,12 +1,10 @@
-include { aletsch } from '../modules/aletsch'
 include { stringtie } from '../modules/stringtie'
-include { mergeGTF; filterAnnotate; customAnotation; transcriptome_fasta } from '../modules/mergeTranscriptome'
+include { mergeGTF; filterAnnotate; transcriptome_fasta } from '../modules/mergeTranscriptome'
 
 workflow ASSEMBLY {
     take:
     strand             // Tuple containing strand info
     bam                // Bam file created by star align
-    bam_list           // List of all bam files created by star
     sample_gtf_list    // List of previously created gtf files to be merged
     reference_gtf      // Path to input reference gtf file
     refseq_gtf         // Path to input refseq gtf file
@@ -29,10 +27,6 @@ workflow ASSEMBLY {
             chromosome_exclusion_list = null
         }
 
-        // Run aletsch if bam_list is not null
-        if(bam_list != null){
-            aletsch(bam_list, outdir)
-        }
 
         // Run stringtie
         stringtie(strand, bam, chromosome_exclusion_list, reference_gtf, outdir)
@@ -75,7 +69,7 @@ workflow ASSEMBLY {
         gtf_tracking = mergeGTF.out.tracking
 
         // Set channel containing paths to r scripts
-        scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
+        //scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
 
         // Run filter annotate r script
         filterAnnotate(reference_gtf,
@@ -89,12 +83,6 @@ workflow ASSEMBLY {
                         outdir)
 
         merged_filtered_gtf = filterAnnotate.out.gtf
-
-        //if (params.custom_annotation) {
-        //   if ( params.custom_annotation ==~ /orfquant/ ) {
-        //        customAnotation(merged_gtf)
-        //   }
-        //}
 
         transcriptome_fasta(merged_filtered_gtf, masked_fasta, outdir)
         assembled_transcriptome_fasta = transcriptome_fasta.out

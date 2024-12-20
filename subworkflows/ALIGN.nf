@@ -1,4 +1,4 @@
-include { indexLength; STAR; samtools } from '../modules/starAlign'
+include { indexLength; STAR } from '../modules/starAlign'
 
 /*
 * Runs star mapper with given input files, sort resulting bam files with samtools
@@ -12,6 +12,7 @@ workflow ALIGN {
     outdir             // Location of output directory
 
     main:
+    // Obtain read length to use correct star index
     index_length = indexLength(reads)
 
     // Map reads to genome using star
@@ -23,11 +24,13 @@ workflow ALIGN {
         outdir)
     
     // Sort star output using samtools
-    samtools(STAR.out.bam, outdir)
-    bam = samtools.out.sorted_bam
-    bam_list = samtools.out.sorted_bam.toList()
+    //samtools(STAR.out.sorted_bam, outdir)
+    bam = STAR.out.sorted_bam
+    star_log = STAR.out.star_log_final
+    samtools_stats = STAR.out.samtools_stats
 
     emit:
-    bam // Tuple of sample id and sorted bam file
-    bam_list // All bam tuples combined into one big tuple
+    bam            // Tuple of sample id and sorted bam file
+    star_log       // Log file of star for multiqc
+    samtools_stats // Statistics file of bam output for multiqc
 }

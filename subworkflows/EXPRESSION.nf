@@ -22,7 +22,8 @@ workflow EXPRESSION {
     // Use stringtie created transcriptome if set to true, otherwise use reference
     if (params.created_transcriptome_expression && assembled_gtf != null){
         input_gtf = assembled_gtf.first()
-        input_transcriptome = assembled_transcriptome.first()
+        input_transcriptome = assembled_fasta.first()
+        println "Using assembled transcriptome for quantification"
     }
     else{
         input_gtf = reference_gtf
@@ -35,6 +36,7 @@ workflow EXPRESSION {
 
         // Run salmon and write paths of quant.sf output files to a text file
         salmon_quasi(reads, paired_end, salmon_index.out, outdir)
+
 
         // Write the paths of the salmon_quasi output files to a text file
         quant_paths = salmon_quasi.out.quant
@@ -58,4 +60,5 @@ workflow EXPRESSION {
     } else{
         println "Featurecounts warning: No BAM files or strand info found"
     }
+    
 }

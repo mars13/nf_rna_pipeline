@@ -3,7 +3,7 @@ process indexLength{
     label "alignment"
 
     input:
-    tuple val(sample_id), path(reads)
+    tuple val(sample_id), path(reads) // Tuple containing sample id and read paths
     
     output:
     env used_index
@@ -41,16 +41,22 @@ process STAR {
     publishDir "${outdir}/star/", mode: 'copy'
 
     input: 
-    tuple val(sample_id), path(reads)
-    val paired_end
-    val usedIndex
-    val reference_gtf
-    val star_index_basedir
-    val outdir
+    tuple val(sample_id), path(reads) // Tuple containing sample id and read paths
+    val paired_end                    // Bool set to true if input reads are paired end
+    val usedIndex                     // Val showing read length for the star index
+    val reference_gtf                 // Input reference gtf file
+    val star_index_basedir            // Path to star index dir
+    val outdir                        // Path to output directory
 
     output:
-    path "${sample_id}/${sample_id}.*"
-    tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
+    //path "${sample_id}/${sample_id}.*"
+    //tuple val("${sample_id}"), path("${sample_id}/${sample_id}.*.bam"), emit: bam
+    tuple val(sample_id), path("${sample_id}/${sample_id}*.Aligned.sortedByCoord.out.bam"), emit:sorted_bam
+    path "${sample_id}/${sample_id}.Aligned.sortedByCoord.out.bam.bai", emit:bam_bai
+    path "${sample_id}/${sample_id}.Log.final.out", emit:star_log_final
+    path "${sample_id}/${sample_id}_stats.txt", emit:samtools_stats
+    
+
 
     script:
     // STAR params defined as concatenated strings singe triple quote multiline declaration generates newline
@@ -63,25 +69,49 @@ process STAR {
                       "--alignSJoverhangMin 10 --outFilterMultimapNmax 10 " +
                       "--outFilterScoreMinOverLread 0.75"
 
+    def bam = "${sample_id}.Aligned.out.bam"
+    def new_bam = "${sample_id}.Aligned.sortedByCoord.out.bam"
+
     if (paired_end == true){
         """
+        mkdir -p ${sample_id}
+        mkdir -p tmp/
+
         # Use STAR for mapping the reads
-        STAR --genomeDir "${star_index_basedir}/${usedIndex}nt" \
+        time STAR --genomeDir "${star_index_basedir}/${usedIndex}nt" \
         --sjdbGTFfile ${reference_gtf} \
         --readFilesIn "${reads[0]}" "${reads[1]}" \
         --outSAMattrRGline ID:${sample_id} LB:${sample_id} PL:IllUMINA SM:${sample_id} \
         --outFileNamePrefix "${sample_id}/${sample_id}." \
         --runThreadN $task.cpus ${star_params}
+
+        # Sort BAM
+        time samtools sort \
+        -@ $task.cpus  \
+        -l 9 \
+        -o "${sample_id}/${new_bam}" \
+        -T "tmp/" \
+        "${sample_id}/${bam}"
+
+        # Delete tmp dir and unsorted bam file
+        rm -r tmp/
+        rm ${sample_id}/${bam} 
+
+        # Create mapping statistics with samtools
+        samtools stats -@ $task.cpus "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"
+
+        # Index the bam with samtools
+        samtools index -@ $task.cpus "${sample_id}/${new_bam}"
+
         """
     } else {
         println "STAR does not currently support single end reads"
         //TODO: add single end commands
-
     }
 }
 
 // Define process for getting mapping stats, sorted bam and .bai with Samtools
-process samtools {
+/* process samtools {
     label "samtools"
     publishDir "${outdir}/star/", mode: 'copy'
 
@@ -109,6 +139,7 @@ process samtools {
     "${bam}"
 
     rm -r tmp/
+    rm ${bam}
 
     # Create mapping statistics with samtools
     samtools stats -@ $task.cpus "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"
@@ -117,3 +148,4 @@ process samtools {
     samtools index -@ $task.cpus "${sample_id}/${new_bam}"
     """
 }
+ */

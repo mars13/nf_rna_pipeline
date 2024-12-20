@@ -10,12 +10,13 @@ process fastp {
 
     output:
     tuple val("${sample_id}"), path("fastp/${sample_id}/*_trimmed.fastq.gz"), emit: fastq_files // Tuple of sample id, and all fastq files
-    path "fastp/${sample_id}/${sample_id}_fastp_report.json" // Output the json files for publishDir
+    path "fastp/${sample_id}/${sample_id}_fastp_report.json", emit: fastp_json// Output the json files for publishDir
 
     script:
     def r1_out = "fastp/${sample_id}/${reads[0].getBaseName(2)}"
     def json_out = "fastp/${sample_id}/${sample_id}_fastp_report.json"
     
+    // Give input for secondary read file if files are paired end
     if (paired_end == true){
         // Set paired end second output for fastp command if paired end
         def r2_out = "fastp/${sample_id}/${reads[1].getBaseName(2)}"

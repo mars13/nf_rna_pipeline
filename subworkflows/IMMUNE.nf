@@ -8,5 +8,7 @@ workflow IMMUNE {
 
     main:
     //TODO implement CIBERSORTx, IPASS and arcasHLA
+    println("Workflow skeleton")
+
 
 }

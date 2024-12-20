@@ -5,6 +5,7 @@ include { ALIGN } from '../subworkflows/ALIGN'
 include { ASSEMBLY } from '../subworkflows/ASSEMBLY'
 include { FUSIONS } from '../subworkflows/FUSIONS'
 include { EXPRESSION } from '../subworkflows/EXPRESSION'
+include { MULTIQC } from '../modules/multiqc.nf'
 
 workflow RNASEQ {
 
@@ -49,6 +50,8 @@ workflow RNASEQ {
     reads = ch_reads.reads
     paired_end = ch_reads.paired_end
 
+    multiqc_files = Channel.empty()
+
     //TODO handle bamfiles from samplesheet
     //TODO handle WGS vcfs from samplesheet
     
@@ -63,6 +66,8 @@ workflow RNASEQ {
         params.outdir)
         star_input = QC.out.trimmed_reads
         strand = QC.out.strandedness
+        multiqc_files = multiqc_files.mix(QC.out.fastp_json)
+        multiqc_files = multiqc_files.mix(QC.out.strand_file)
 
     } else {
         default_trimmed_reads = "${params.outdir}/**/*{R1,R2}*_trimmed.{fastq.gz,fq.gz}"
@@ -78,7 +83,7 @@ workflow RNASEQ {
         // Look for strandedness summary file
         default_strand_files = "${params.outdir}/check_strandedness/strandedness_all.txt"
         if (params.strand_info) {
-            Channel.fromPath(strand_info, checkIfExists: true)
+            Channel.fromPath(params.strand_info, checkIfExists: true)
             .splitText(){ it.trim() }
             .set { strand }
 
@@ -99,9 +104,11 @@ workflow RNASEQ {
     if (params.align){
         ALIGN(star_input, paired_end, params.reference_gtf, params.star_index_basedir, params.outdir)
         bam = ALIGN.out.bam
-        bam_list = ALIGN.out.bam_list
+        multiqc_files = multiqc_files.mix(ALIGN.out.star_log)
+        multiqc_files = multiqc_files.mix(ALIGN.out.samtools_stats)
+
     } else {
-         // Look for alignment files in case star has been run previously
+        // Look for alignment files in case star has been run previously
         default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
         if (params.bam_files) {
             bam = Channel.fromFilePairs(params.bam_files, size: 1, checkIfExists: true)
@@ -109,7 +116,7 @@ workflow RNASEQ {
             bam = Channel.fromFilePairs(default_bams, size: 1, checkIfExists: true)
         } else {
             bam = null
-        }
+         }
     }
     
     /*
@@ -119,7 +126,6 @@ workflow RNASEQ {
         if (paired_end) {
             ASSEMBLY(strand,
             bam,
-            bam_list,
             params.sample_gtf_list,
             params.reference_gtf,
             params.refseq_gtf,
@@ -130,8 +136,8 @@ workflow RNASEQ {
             params.min_tpm,
             params.outdir)
 
-            assembled_gtf = ASSEMBLY.out.merged_gtf
-            stringtie_transcriptome = ASSEMBLY.out.stringtie_transcriptome
+            assembled_gtf = ASSEMBLY.out.merged_filtered_gtf
+            assembled_fasta = ASSEMBLY.out.assembled_transcriptome_fasta
 
         } else {
             assembled_gtf = null
@@ -140,7 +146,7 @@ workflow RNASEQ {
         }
     } else{
         assembled_gtf = null
-        stringtie_transcriptome = null
+        assembled_fasta = null
     }
     
     /*
@@ -162,15 +168,15 @@ workflow RNASEQ {
             bam,
             strand,
             assembled_gtf,
-            stringtie_transcriptome,
+            assembled_fasta,
             params.expression_mode,
             paired_end,
             params.reference_transcriptome,
             params.reference_gtf,
             params.output_basename,
             params.outdir)
-            
     }
+
     /*
     * Step 06: Immune landscape
     */
@@ -178,6 +184,7 @@ workflow RNASEQ {
     /*
     * Step 07: MultiQC
     */
-
+    multiqc_config_file = file("${projectDir}/${params.multiqc_config}")
+    MULTIQC (multiqc_files.collect(), multiqc_config_file, params.outdir) 
 }
 

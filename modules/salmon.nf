@@ -15,7 +15,7 @@ process salmon_index {
 
 process salmon_quasi {
     label "salmon"
-    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
+    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/quant.sf"
 
     input:
     tuple(val(sample_id), path(reads)) // Tuple of sample id and input read file(s)
@@ -25,7 +25,6 @@ process salmon_quasi {
 
     output:
     path "${sample_id}/quant.sf", emit: quant
-    //path "${sample_id}/*"
 
     script:
         if (paired_end == true){
