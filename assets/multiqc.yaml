@@ -1,0 +1,9 @@
+fn_clean_exts:
+  - ".gz"
+  - ".fastq"
+  - "_stats"
+  - ".Log.final.out"
+  - "_fastp_report"
+
+fastp:
+  s_name_filenames: true
