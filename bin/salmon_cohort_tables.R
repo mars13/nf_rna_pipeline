@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 
 # Author: Marina Reixachs Sole [M.Reixachssole@prinsesmaximacentrum.nl]
+# Usage: script.R <quant_paths> <gtf_file> <prefix>
 
 suppressPackageStartupMessages({
   library(rtracklayer)
@@ -13,9 +14,15 @@ suppressPackageStartupMessages({
 # READ ARGS-----------------
 args <- commandArgs(trailingOnly = TRUE)
 
+if (length(args) != 3) {
+  stop("Usage: script.R <quant_paths> <gtf_file> <prefix>")
+}
+
 quant_paths <- args[1]
 gtf_file <- args[2]
 prefix <- args[3]
+
+print(quant_paths)
 
 # LOGGING FUNCTION -----------------
 log_file <- file.path(paste0(prefix, "_log.txt"))
@@ -30,51 +37,58 @@ log_message <- function(message, level = "WARNING") {
 
 # Function to generate tx2gene
 get_tx2gene <- function(gtf_data) {
+  # Select transcript entries only
   transcript_entries <- as.data.frame(gtf_data) %>%
     filter(type == "transcript")
 
-  if (nrow(transcript_entries) == 0) {
-    stop("No transcript entries found in the GTF file. Ensure the GTF file contains transcripts.")
+  # Stop if no transcript entries are found
+  if (is.null(transcript_entries) || nrow(transcript_entries) == 0) {
+    stop("No valid tx2gene data. Ensure the GTF file contains transcript entries.")
   }
 
+  # Evaluate presence of gene_id and gene_name
   has_gene_id <- "gene_id" %in% colnames(transcript_entries) && !all(is.na(transcript_entries$gene_id))
   has_gene_name <- "gene_name" %in% colnames(transcript_entries) && !all(is.na(transcript_entries$gene_name))
 
   # Error handling for missing fields
   if (!has_gene_id && !has_gene_name) {
-    log_message("No 'gene_id' or 'gene_name' found in the GTF file. Gene expression will not be computed.")
-    tx2gene <- NULL
-  } else if (!has_gene_id && has_gene_name) {
-    log_message("No 'gene_id' found in the GTF file.")
-    tx2gene <- transcript_entries %>% dplyr::select(transcript_id, gene_name)
-  } else if (!has_gene_name && has_gene_id) {
-    log_message("No 'gene_name' found in the GTF file.")
-    tx2gene <- transcript_entries %>% dplyr::select(transcript_id, gene_id)
+    log_message("No 'gene_id' or 'gene_name' found in the GTF file. Gene-level expression will not be computed.")
+    return(NULL)
+  }
+
+  # Select and handle gene_id and gene_name
+  if (all(is.na(transcript_entries$gene_name))) {
+    log_message("All 'gene_name' values are NA. Gene name table will not be generated.")
+    tx2gene <- tx2gene %>% dplyr::select(transcript_id, gene_id)
+  } else if (all(is.na(transcript_entries$gene_id))) {
+    log_message("All 'gene_id' values are NA. Gene ID table will not be generated.")
+    tx2gene <- transcript_entries %>%
+      dplyr::select(transcript_id, gene_name)
   } else {
-    tx2gene <- transcript_entries %>% dplyr::select(transcript_id, gene_id, gene_name)
+    tx2gene <- transcript_entries %>%
+      dplyr::select(transcript_id, gene_id, gene_name) %>%
+      mutate(gene_name = ifelse(is.na(gene_name), gene_id, gene_name)) %>%
+      mutate(gene_id = ifelse(is.na(gene_id), gene_name, gene_id)) # Replace NA gene_name with gene_id
   }
 
-  # Count missing values for gene_id and gene_name
-  if (has_gene_id) {
-    missing_gene_ids <- sum(is.na(tx2gene$gene_id))
-    if (missing_gene_ids > 0) {
-      log_message(paste(missing_gene_ids, "transcripts have missing 'gene_id' values."))
-    }
+  # Remove rows with missing transcript IDs
+  tx2gene <- tx2gene[!is.na(tx2gene$transcript_id), ]
+
+  # Log missing values
+  missing_gene_ids <- sum(is.na(tx2gene$gene_id))
+  if (missing_gene_ids > 0) {
+    log_message(paste(missing_gene_ids, "transcripts have missing 'gene_id' values."))
   }
 
-  if (has_gene_name) {
+  if ("gene_name" %in% colnames(tx2gene)) {
     missing_gene_names <- sum(is.na(tx2gene$gene_name))
     if (missing_gene_names > 0) {
       log_message(paste(missing_gene_names, "transcripts have missing 'gene_name' values."))
     }
   }
 
-  # Remove rows with missing transcript IDs
-  tx2gene <- tx2gene[!is.na(tx2gene$transcript_id), ]
-
   return(tx2gene)
 }
-
 # Function to write properly formatted tables
 write_tsv <- function(data, file) {
   if (!is.null(data)) {
@@ -83,11 +97,42 @@ write_tsv <- function(data, file) {
       sep = "\t",
       row.names = TRUE,
       col.names = TRUE,
-      quote = FALSE)
+      quote = FALSE
+    )
     log_message(paste("Successfully wrote file:", file), level = "INFO")
   } else {
     log_message(paste("Unable to write output file:", file))
   }
+}
+
+# Function to import salmon files - aware of gencode transcript IDs (ENST..|ENSG..)
+import_salmon <- function(quant_files) {
+  # Load first row to check format in salmon
+  first_record <- read_tsv(quant_files[1], n_max = 1, show_col_types = FALSE)
+  first_id <- first_record$Name
+
+  if (grepl("\\|", first_id)) {
+    txi <- tximport(
+      files = quant_files,
+      type = "salmon",
+      txOut = TRUE,
+      ignoreAfterBar = TRUE,
+      dropInfReps = TRUE
+    )
+  } else {
+    txi <- tximport(
+      files = quant_files,
+      type = "salmon",
+      txOut = TRUE,
+      dropInfReps = TRUE
+    )
+  }
+
+  if (is.null(txi$counts) || is.null(txi$abundance)) {
+    stop("Failed to load quantification data. Check your Salmon outputs and paths.")
+  }
+
+  return(txi)
 }
 
 # CODE -----------------
@@ -105,18 +150,19 @@ tx2gene <- get_tx2gene(gtf_data)
 tx2gene_file <- file.path(paste0(prefix, "_tx2gene.tsv"))
 write_tsv(tx2gene, tx2gene_file)
 
-# Get the list of quant.sf files
 quant_files <- readLines(quant_paths)
 
+# Get the list of quant.sf files
 if (length(quant_files) == 0) {
-  stop("No quant.sf files found in the specified directory.")
+  log_message("No quant.sf files found. Ensure the input file contains valid paths.", level = "ERROR")
+  stop("No quant.sf files found. Check your input.")
 }
 
 # Create a named vector for files
 names(quant_files) <- basename(dirname(quant_files))
 
 # Import the quantification files using tximport
-txi <- tximport(files = quant_files, type = "salmon", txOut = TRUE)
+txi <- import_salmon(quant_files)
 
 # Summarise gene counts by gene_id
 if ("gene_id" %in% colnames(tx2gene)) {
@@ -124,7 +170,7 @@ if ("gene_id" %in% colnames(tx2gene)) {
     log_message("All 'transcript_id' values are identical to 'gene_id'. Gene ID tables will not be generated.")
     txi.id <- NULL
   } else {
-    txi.id <- summarizeToGene(txi, tx2gene[, c("transcript_id", "gene_id")], ignoreTxVersion = TRUE)
+    txi.id <- summarizeToGene(txi, tx2gene[, c("transcript_id", "gene_id")])
   }
 } else {
   txi.id <- NULL
@@ -136,7 +182,7 @@ if ("gene_name" %in% colnames(tx2gene)) {
     log_message("All 'transcript_id' values are identical to 'gene_name'. Gene name tables will not be generated.")
     txi.name <- NULL
   } else {
-    txi.name <- summarizeToGene(txi, tx2gene[, c("transcript_id", "gene_name")], ignoreTxVersion = TRUE)
+    txi.name <- summarizeToGene(txi, tx2gene[, c("transcript_id", "gene_name")])
   }
 } else {
   txi.name <- NULL
