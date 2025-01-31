@@ -146,6 +146,11 @@
                     "description": "Formats for custom annotation outputs",
                     "default": "\"orfquant\""
                 },
+                "created_transcriptome_expression": {
+                    "type": "boolean",
+                    "description": "Use stringtie created transcriptome if set to true, otherwise use reference",
+                    "default": false
+                },
                 "expression_mode": {
                     "type": "string",
                     "description": "expression mode for Salmon and/or FeatureCounts  [\"sq\", \"sa\", \"sqfc\", \"safc\", \"fc\"]",
