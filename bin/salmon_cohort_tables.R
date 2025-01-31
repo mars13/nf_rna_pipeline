@@ -40,64 +40,70 @@ get_tx2gene <- function(gtf_data) {
   # Select transcript entries only
   transcript_entries <- as.data.frame(gtf_data) %>%
     filter(type == "transcript")
-
+  
   # Stop if no transcript entries are found
   if (is.null(transcript_entries) || nrow(transcript_entries) == 0) {
     stop("No valid tx2gene data. Ensure the GTF file contains transcript entries.")
   }
-
+  
   # Evaluate presence of gene_id and gene_name
   has_gene_id <- "gene_id" %in% colnames(transcript_entries) && !all(is.na(transcript_entries$gene_id))
   has_gene_name <- "gene_name" %in% colnames(transcript_entries) && !all(is.na(transcript_entries$gene_name))
-
+  
   # Error handling for missing fields
   if (!has_gene_id && !has_gene_name) {
     log_message("No 'gene_id' or 'gene_name' found in the GTF file. Gene-level expression will not be computed.")
     return(NULL)
   }
-
+  
   # Select and handle gene_id and gene_name
   if (all(is.na(transcript_entries$gene_name))) {
     log_message("All 'gene_name' values are NA. Gene name table will not be generated.")
-    tx2gene <- tx2gene %>% dplyr::select(transcript_id, gene_id)
+    tx2gene <- tx2gene %>% 
+      dplyr::select(transcript_id, gene_id) %>%
+      dplyr::mutate(transcript_id = gsub("\\..*", "", transcript_id),
+                    gene_id = gsub("\\..*", "", gene_id))
   } else if (all(is.na(transcript_entries$gene_id))) {
     log_message("All 'gene_id' values are NA. Gene ID table will not be generated.")
     tx2gene <- transcript_entries %>%
-      dplyr::select(transcript_id, gene_name)
+      dplyr::select(transcript_id, gene_name) %>%
+      dplyr::mutate(transcript_id = gsub("\\..*", "", transcript_id))
   } else {
     tx2gene <- transcript_entries %>%
       dplyr::select(transcript_id, gene_id, gene_name) %>%
-      mutate(gene_name = ifelse(is.na(gene_name), gene_id, gene_name)) %>%
-      mutate(gene_id = ifelse(is.na(gene_id), gene_name, gene_id)) # Replace NA gene_name with gene_id
+      dplyr::mutate(transcript_id = gsub("\\..*", "", transcript_id),
+                    gene_id = gsub("\\..*", "", gene_id)) %>%
+      mutate(gene_name = ifelse(is.na(gene_name), gene_id, gene_name)) %>%  # Replace NA gene_name with gene_id
+      mutate(gene_id = ifelse(is.na(gene_id), gene_name, gene_id)) 
   }
-
+  
   # Remove rows with missing transcript IDs
   tx2gene <- tx2gene[!is.na(tx2gene$transcript_id), ]
-
+  
   # Log missing values
   missing_gene_ids <- sum(is.na(tx2gene$gene_id))
   if (missing_gene_ids > 0) {
     log_message(paste(missing_gene_ids, "transcripts have missing 'gene_id' values."))
   }
-
+  
   if ("gene_name" %in% colnames(tx2gene)) {
     missing_gene_names <- sum(is.na(tx2gene$gene_name))
     if (missing_gene_names > 0) {
       log_message(paste(missing_gene_names, "transcripts have missing 'gene_name' values."))
     }
   }
-
+  
   return(tx2gene)
 }
 # Function to write properly formatted tables
 write_tsv <- function(data, file) {
   if (!is.null(data)) {
     write.table(data,
-      file = file,
-      sep = "\t",
-      row.names = TRUE,
-      col.names = TRUE,
-      quote = FALSE
+                file = file,
+                sep = "\t",
+                row.names = TRUE,
+                col.names = TRUE,
+                quote = FALSE
     )
     log_message(paste("Successfully wrote file:", file), level = "INFO")
   } else {
@@ -110,7 +116,7 @@ import_salmon <- function(quant_files) {
   # Load first row to check format in salmon
   first_record <- read_tsv(quant_files[1], n_max = 1, show_col_types = FALSE)
   first_id <- first_record$Name
-
+  
   if (grepl("\\|", first_id)) {
     txi <- tximport(
       files = quant_files,
@@ -119,6 +125,7 @@ import_salmon <- function(quant_files) {
       ignoreAfterBar = TRUE,
       dropInfReps = TRUE
     )
+   
   } else {
     txi <- tximport(
       files = quant_files,
@@ -127,11 +134,16 @@ import_salmon <- function(quant_files) {
       dropInfReps = TRUE
     )
   }
-
+  
+  #Manually remove tx version (ignoreAfterBar and ignoreTxVersion are incompatible)
+  rownames(txi$abundance) <- gsub("\\..*", "", rownames(txi$abundance)) 
+  rownames(txi$length) <- gsub("\\..*", "", rownames(txi$length)) 
+  rownames(txi$counts) <- gsub("\\..*", "", rownames(txi$counts)) 
+  
   if (is.null(txi$counts) || is.null(txi$abundance)) {
     stop("Failed to load quantification data. Check your Salmon outputs and paths.")
   }
-
+  
   return(txi)
 }
 
