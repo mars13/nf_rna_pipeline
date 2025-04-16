@@ -25,7 +25,7 @@ def check_duplicate_samples(String filePath) {
         if (line.trim()) {
             def columns = line.split(',')
             // Obtain values from first columns
-            def first_column_value = columns[0].trim()
+            def first_column_value = columns[1].trim()
 
             // Check if the value is unique
             if (unique_values.contains(first_column_value)) {
