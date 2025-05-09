@@ -70,10 +70,10 @@ workflow ASSEMBLY {
 
         // Set channel containing paths to r scripts
         //scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
-
+        
         // Run filter annotate r script
         filterAnnotate(reference_gtf,
-                        refseq_gtf,
+                        refseq_gtf ?: "",
                         gtf_novel,
                         gtf_tracking,
                         min_occurrence,

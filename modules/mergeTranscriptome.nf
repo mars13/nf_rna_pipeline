@@ -53,16 +53,18 @@ process filterAnnotate {
     path "${output_basename}_novel_filtered.tsv"
 
     script:
+    def refseq_arg = refseq_gtf ? "\"${refseq_gtf}\"" : ""
+
     """
     filter_annotate.R \
     "${reference_gtf}" \
-    "${refseq_gtf}" \
     "${gtf_novel}" \
     "${gtf_tracking}" \
     "${min_occurrence}" \
     "${min_tpm}" \
     "${output_basename}_novel_filtered" \
-    "${scripts_dir}"
+    "${scripts_dir}" \
+    ${refseq_arg}
     """
 }
 
