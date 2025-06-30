@@ -11,7 +11,7 @@ process checkStrand {
     val outdir                        // Path to output directory
 
     output:
-    env strand_info, emit: strand
+    tuple val("${sample_id}"), env(strand_info), emit: strand
     path "${sample_id}.txt", emit: strand_file
 
     script:

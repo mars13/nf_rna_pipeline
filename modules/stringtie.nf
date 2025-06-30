@@ -4,8 +4,7 @@ process stringtie {
     publishDir "${outdir}/stringtie", mode: 'copy'
 
     input:
-    tuple val(stringtie), val(featurecounts) // Strandedness of input reads
-    tuple val(sample_id), path(bam)          // Tuple of sample id and star result bam
+    tuple val(sample_id), val(stringtie), path(bam) // Tuple of sample id and star result bam
     val chr                                  // Chromosome exclusion list 
     val reference_gtf                        // Reference gtf file location
     val outdir                               // Path to output directory

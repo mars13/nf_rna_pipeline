@@ -7,8 +7,7 @@ workflow EXPRESSION {
 
     take:
     reads           // Tuple of sample id and input read file(s)
-    bam             // Bam file created by star align
-    strand          // Tuple containing strand info
+    featurecounts_input
     assembled_gtf   // Path to assembled transcriptome gtf file
     assembled_fasta // Path to assembled transcriptome sequences file
     mode            // Salmon mode to run
@@ -55,8 +54,8 @@ workflow EXPRESSION {
     salmon_tables(quant_paths, input_gtf, output_basename, outdir)
 
     // Run featurecounts if bam files for input exist and strand info is available
-    if (bam != null && params.qc){
-       featurecounts(bam, strand, reference_gtf, outdir)
+    if (featurecounts_input != null && params.qc){
+       featurecounts(featurecounts_input, input_gtf, outdir)
     } else{
         println "Featurecounts warning: No BAM files or strand info found"
     }

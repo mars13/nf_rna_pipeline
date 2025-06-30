@@ -2,17 +2,22 @@ include { fastp } from '../modules/fastp'
 include { checkStrand } from '../modules/strandedness'
 
 // Groovy function to check if strand type exists and to set the strand type if found
-def getStrandtype(strand) {
+def getStrandtype(strand_tuple) {
+    def (sample_id, strand) = strand_tuple
     def strand_type = null
+
     if (strand ==~ /.*RF\/fr-firststrand/) {
-        strand_type = tuple("rf", 1)
+        strand_type = tuple(sample_id, "rf", 1)
     } else if (strand ==~ /.*FR\/fr-secondstrand/) {
-        strand_type = tuple("fr", 2)
+        strand_type = tuple(sample_id, "fr", 2)
     } else {
-        strand_type = tuple("unstranded", 0) // Will also set undetermined to unstranded
-        //println "WARNING: Data is unstranded"
-       // exit 1
+        strand_type = tuple(sample_id, "unstranded", 0)
+        // Optionally warn or exit here
+        // println "WARNING: Data for ${sample_id} is unstranded"
+        // exit 1
     }
+
+    return strand_type
 }
 
 //Run fastp on the input reads and obatains their strandedness

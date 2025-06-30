@@ -64,8 +64,10 @@ workflow RNASEQ {
         params.kallisto_index,
         params.reference_gtf,
         params.outdir)
+        
         star_input = QC.out.trimmed_reads
         strand = QC.out.strandedness
+        
         multiqc_files = multiqc_files.mix(QC.out.fastp_json)
         multiqc_files = multiqc_files.mix(QC.out.strand_file)
 
@@ -118,14 +120,22 @@ workflow RNASEQ {
             bam = null
          }
     }
-    
+
     /*
     * Step 03: Assemble transcriptome
     */
     if (params.assembly || params.merge) {
         if (paired_end) {
-            ASSEMBLY(strand,
-            bam,
+            // Join the strand info with the bam file to prevent sample mixing
+            stringtie_input = strand.join(bam)
+            .map { row ->
+                    def sample_id = row[0]    // Sample Id
+                    def strand_label = row[1] // Strand value
+                    def file_path = row[3]    // BAM file path
+                    [sample_id, strand_label, file_path]
+                }
+
+            ASSEMBLY(stringtie_input,
             params.sample_gtf_list,
             params.reference_gtf,
             params.refseq_gtf,
@@ -151,7 +161,7 @@ workflow RNASEQ {
     
     /*
     * Step 04: Fusion calling
-    * TODO could we combine mapping for fusions and for txome assembly in one?
+    * TODO: could we combine mapping for fusions and for txome assembly in one?
     */
     if (params.fusions) {
         FUSIONS(star_input,
@@ -164,9 +174,17 @@ workflow RNASEQ {
     * Step 05: Expression
     */
     if (params.expression) {
+        // Join the strand info with the bam file to prevent sample mixing
+        featurecounts_input = strand.join(bam)
+        .map { row ->
+                def sample_id = row[0]    // Sample Id
+                def strand_code = row[2]  // Strand code value
+                def file_path = row[3]    // BAM file path
+                [sample_id, strand_code, file_path]
+            }
+
         EXPRESSION(star_input,
-            bam,
-            strand,
+            featurecounts_input,
             assembled_gtf,
             assembled_fasta,
             params.expression_mode,

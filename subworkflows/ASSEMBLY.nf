@@ -3,8 +3,7 @@ include { mergeGTF; filterAnnotate; transcriptome_fasta } from '../modules/merge
 
 workflow ASSEMBLY {
     take:
-    strand             // Tuple containing strand info
-    bam                // Bam file created by star align
+    stringtie_input
     sample_gtf_list    // List of previously created gtf files to be merged
     reference_gtf      // Path to input reference gtf file
     refseq_gtf         // Path to input refseq gtf file
@@ -29,7 +28,7 @@ workflow ASSEMBLY {
 
 
         // Run stringtie
-        stringtie(strand, bam, chromosome_exclusion_list, reference_gtf, outdir)
+        stringtie(stringtie_input, chromosome_exclusion_list, reference_gtf, outdir)
 
         // Wait untill all stringtie runs are completed
         gtf_paths = stringtie.out.collect().flatten()

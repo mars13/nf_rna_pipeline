@@ -103,10 +103,9 @@ process featurecounts {
     publishDir "${outdir}/featurecounts", mode: 'copy'
 
     input:
-    tuple(val(sample_id), path(bam))         // Tuple of sample id and input read file(s)
-    tuple val(stringtie), val(featurecounts) // Strandedness of input reads
-    val reference_gtf                        // Path to the input reference gtf file
-    val outdir                               // Path to output directory
+    tuple val(sample_id), val(featurecounts), path(bam) // Tuple of sample id and input read file(s)
+    val reference_gtf                                    // Path to the input reference gtf file
+    val outdir                                           // Path to output directory
 
     output:
     path "${sample_id}/*"
