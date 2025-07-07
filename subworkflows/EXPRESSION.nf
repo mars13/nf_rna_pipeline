@@ -54,10 +54,8 @@ workflow EXPRESSION {
     salmon_tables(quant_paths, input_gtf, output_basename, outdir)
 
     // Run featurecounts if bam files for input exist and strand info is available
-    if (featurecounts_input != null && params.qc){
+    if (featurecounts_input != null && paired_end == true){
        featurecounts(featurecounts_input, input_gtf, outdir)
-    } else{
-        println "Featurecounts warning: No BAM files or strand info found"
     }
     
 }

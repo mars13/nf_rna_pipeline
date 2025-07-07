@@ -1,5 +1,5 @@
-include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
-include { checkInputFiles } from "../modules/helperFunctions.nf"
+include { validateParameters; paramsSummaryLog; samplesheetToList; } from 'plugin/nf-schema'
+include { checkInputFiles; is_paired_end } from "../modules/helperFunctions.nf"
 include { QC } from '../subworkflows/QC'
 include { ALIGN } from '../subworkflows/ALIGN'
 include { ASSEMBLY } from '../subworkflows/ASSEMBLY'
@@ -8,9 +8,6 @@ include { EXPRESSION } from '../subworkflows/EXPRESSION'
 include { MULTIQC } from '../modules/multiqc.nf'
 
 workflow RNASEQ {
-
-    // Give output directory location
-    //params.outdir_rnaseq = ${params.outdir}/rnaseq/
 
     // Initialise workflow
 
@@ -23,35 +20,29 @@ workflow RNASEQ {
     // Validate files
     checkInputFiles()
 
-    //Create input channel from samplesheet
+    // Check if input is paired_end or single end and prevent mixing
+    boolean paired_end_check = is_paired_end(params.input)
+    paired_end = Channel.from(paired_end_check).first()
+    println("paired_end_check:")
+    println(paired_end_check)
+
+    // Create input channel from samplesheet
     ch_input = Channel.fromList(samplesheetToList(params.input, "assets/schema_input.json"))
 
-    //Get channel for RNA reads (paired or single)
-    ch_input
+    // Create channel with sample id and RNA reads (single or paired)
+    reads = ch_input
         .filter { meta, filename_1, filename_2 ->
             meta.filetype == "fastq" && meta.sequence == "rna"
         }
         .map { meta, fastq_1, fastq_2 ->
-                if (!fastq_2) {
-                    return [ meta + [ paired_end:false ], [ fastq_1 ] ]
-                } else {
-                    return [ meta + [ paired_end:true ], [ fastq_1, fastq_2 ] ]
-                }
+            def read_files = fastq_2 ? [fastq_1, fastq_2] : [fastq_1]
+            tuple(meta.id, read_files)
         }
-        .set{ ch_fastq }
 
-    ch_fastq
-        .multiMap { meta, reads ->
-            reads: tuple(meta.id, reads)
-            paired_end:   meta.paired_end
-        }
-        .set { ch_reads }
-
-    reads = ch_reads.reads
-    paired_end = ch_reads.paired_end
-
+    reads.view()
     multiqc_files = Channel.empty()
 
+ 
     //TODO handle bamfiles from samplesheet
     //TODO handle WGS vcfs from samplesheet
     
@@ -59,7 +50,8 @@ workflow RNASEQ {
     * Step 01: QC
     */
     if (params.qc) {
-        QC(reads, 
+        QC(reads,
+        paired_end_check, 
         paired_end,
         params.kallisto_index,
         params.reference_gtf,
@@ -124,36 +116,30 @@ workflow RNASEQ {
     /*
     * Step 03: Assemble transcriptome
     */
-    if (params.assembly || params.merge) {
-        if (paired_end) {
-            // Join the strand info with the bam file to prevent sample mixing
-            stringtie_input = strand.join(bam)
-            .map { row ->
-                    def sample_id = row[0]    // Sample Id
-                    def strand_label = row[1] // Strand value
-                    def file_path = row[3]    // BAM file path
-                    [sample_id, strand_label, file_path]
-                }
+    //paired_end.view()
+    if ((params.assembly || params.merge) && paired_end_check == true) {
+        // Join the strand info with the bam file to prevent sample mixing
+        stringtie_input = strand.join(bam)
+        .map { row ->
+                def sample_id = row[0]    // Sample Id
+                def strand_label = row[1] // Strand value
+                def file_path = row[3]    // BAM file path
+                [sample_id, strand_label, file_path]
+            }
 
-            ASSEMBLY(stringtie_input,
-            params.sample_gtf_list,
-            params.reference_gtf,
-            params.refseq_gtf,
-            params.chr_exclusion_list,
-            params.masked_fasta,
-            params.output_basename,
-            params.min_occurrence,
-            params.min_tpm,
-            params.outdir)
+        ASSEMBLY(stringtie_input,
+                params.sample_gtf_list,
+                params.reference_gtf,
+                params.refseq_gtf,
+                params.chr_exclusion_list,
+                params.masked_fasta,
+                params.output_basename,
+                params.min_occurrence,
+                params.min_tpm,
+                params.outdir)
 
-            assembled_gtf = ASSEMBLY.out.merged_filtered_gtf
-            assembled_fasta = ASSEMBLY.out.assembled_transcriptome_fasta
-
-        } else {
-            assembled_gtf = null
-            println "Transcriptome assembly not supported for single stranded data."
-            exit 1
-        }
+        assembled_gtf = ASSEMBLY.out.merged_filtered_gtf
+        assembled_fasta = ASSEMBLY.out.assembled_transcriptome_fasta
     } else{
         assembled_gtf = null
         assembled_fasta = null
@@ -163,7 +149,8 @@ workflow RNASEQ {
     * Step 04: Fusion calling
     * TODO: could we combine mapping for fusions and for txome assembly in one?
     */
-    if (params.fusions) {
+
+    if (params.fusions && paired_end_check == true) {
         FUSIONS(star_input,
             paired_end,
             params.arriba_reference,
@@ -173,16 +160,19 @@ workflow RNASEQ {
     /*
     * Step 05: Expression
     */
-    if (params.expression) {
+    if (params.expression ) {
         // Join the strand info with the bam file to prevent sample mixing
-        featurecounts_input = strand.join(bam)
-        .map { row ->
-                def sample_id = row[0]    // Sample Id
-                def strand_code = row[2]  // Strand code value
-                def file_path = row[3]    // BAM file path
-                [sample_id, strand_code, file_path]
-            }
-
+        if (paired_end_check == true){
+            featurecounts_input = strand.join(bam)
+            .map { row ->
+                    def sample_id = row[0]    // Sample Id
+                    def strand_code = row[2]  // Strand code value
+                    def file_path = row[3]    // BAM file path
+                    [sample_id, strand_code, file_path]
+                }
+        }else{
+            featurecounts_input = null
+        }
         EXPRESSION(star_input,
             featurecounts_input,
             assembled_gtf,

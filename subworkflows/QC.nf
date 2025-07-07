@@ -24,6 +24,7 @@ def getStrandtype(strand_tuple) {
 workflow QC {
     take:
     reads          // Input fastq files
+    paired_end_check
     paired_end     // Bool, true if paired end data
     kallisto_index // Path to the kallisto index file
     reference_gtf  // Path to the reference gtf 
@@ -35,18 +36,24 @@ workflow QC {
     fastp_json = fastp.out.fastp_json
     
     // Run strandedness
-    strand = checkStrand(reads, paired_end, kallisto_index, reference_gtf, outdir).strand
-    
-    // Create a file containing the strand of all files
-    checkStrand.out
-            .strand
-            .collectFile(
-            name: 'strandedness_all.txt',
-            storeDir: "${outdir}/check_strandedness/",
-            newLine: true, sort: true)
+    if (paired_end_check == true){
+        strand = checkStrand(reads, kallisto_index, reference_gtf, outdir).strand
+        
+        // Create a file containing the strand of all files
+        checkStrand.out
+                .strand
+                .collectFile(
+                name: 'strandedness_all.txt',
+                storeDir: "${outdir}/check_strandedness/",
+                newLine: true, sort: true)
 
-    strandedness = strand.map{ it -> getStrandtype(it) }
-    strand_file = checkStrand.out.strand_file
+        strandedness = strand.map{ it -> getStrandtype(it) }
+        strand_file = checkStrand.out.strand_file
+    }else{
+        strand = null
+        strandedness = null
+        strand_file = null        
+    }
 
     emit:
     strandedness  // File, strandedness of the data

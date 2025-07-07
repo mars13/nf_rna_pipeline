@@ -56,8 +56,6 @@ process STAR {
     path "${sample_id}/${sample_id}.Log.final.out", emit:star_log_final
     path "${sample_id}/${sample_id}_stats.txt", emit:samtools_stats
     
-
-
     script:
     // STAR params defined as concatenated strings singe triple quote multiline declaration generates newline
     def star_params = "--readFilesCommand zcat " +
@@ -73,73 +71,36 @@ process STAR {
     def new_bam = "${sample_id}.Aligned.sortedByCoord.out.bam"
 
     if (paired_end == true){
-        """
-        mkdir -p ${sample_id}
-        mkdir -p tmp/
-
-        # Use STAR for mapping the reads
-        time STAR --genomeDir "${star_index_basedir}/${usedIndex}nt" \
-        --sjdbGTFfile ${reference_gtf} \
-        --readFilesIn "${reads[0]}" "${reads[1]}" \
-        --outSAMattrRGline ID:${sample_id} LB:${sample_id} PL:IllUMINA SM:${sample_id} \
-        --outFileNamePrefix "${sample_id}/${sample_id}." \
-        --runThreadN $task.cpus ${star_params}
-
-        # Sort BAM
-        time samtools sort \
-        -@ $task.cpus  \
-        -l 9 \
-        -o "${sample_id}/${new_bam}" \
-        -T "tmp/" \
-        "${sample_id}/${bam}"
-
-        # Delete tmp dir and unsorted bam file
-        rm -r tmp/
-        rm ${sample_id}/${bam} 
-
-        # Create mapping statistics with samtools
-        samtools stats -@ $task.cpus "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"
-
-        # Index the bam with samtools
-        samtools index -@ $task.cpus "${sample_id}/${new_bam}"
-
-        """
+        // Set paired-end input parameter
+        star_input = """--readFilesIn "${reads[0]}" "${reads[1]}" """
     } else {
-        println "STAR does not currently support single end reads"
-        //TODO: add single end commands
+        // Set single-end input parameter
+        star_input = """--readFilesIn "${reads}" """
     }
-}
-
-// Define process for getting mapping stats, sorted bam and .bai with Samtools
-/* process samtools {
-    label "samtools"
-    publishDir "${outdir}/star/", mode: 'copy'
-
-    input: 
-    tuple val(sample_id), path(bam)
-    val outdir
-
-    output:
-    tuple val(sample_id), path("${sample_id}/${sample_id}*.Aligned.sortedByCoord.out.bam"), emit:sorted_bam
-    path "${sample_id}/${sample_id}*" // Output all files to publishDir
-
-
-    script:
-    def new_bam = "${bam.name.replaceFirst('.Aligned.out.bam', '.Aligned.sortedByCoord.out.bam')}"
-
+    
     """
     mkdir -p ${sample_id}
     mkdir -p tmp/
+
+    # Use STAR for mapping the reads
+    time STAR --genomeDir "${star_index_basedir}/${usedIndex}nt" \
+    --sjdbGTFfile ${reference_gtf} \
+    ${star_input} \
+    --outSAMattrRGline ID:${sample_id} LB:${sample_id} PL:IllUMINA SM:${sample_id} \
+    --outFileNamePrefix "${sample_id}/${sample_id}." \
+    --runThreadN $task.cpus ${star_params}
+
     # Sort BAM
-    samtools sort \
-    -@ $task.cpus \
+    time samtools sort \
+    -@ $task.cpus  \
     -l 9 \
     -o "${sample_id}/${new_bam}" \
     -T "tmp/" \
-    "${bam}"
+    "${sample_id}/${bam}"
 
+    # Delete tmp dir and unsorted bam file
     rm -r tmp/
-    rm ${bam}
+    rm ${sample_id}/${bam} 
 
     # Create mapping statistics with samtools
     samtools stats -@ $task.cpus "${sample_id}/${new_bam}" > "${sample_id}/${sample_id}_stats.txt"
@@ -147,5 +108,5 @@ process STAR {
     # Index the bam with samtools
     samtools index -@ $task.cpus "${sample_id}/${new_bam}"
     """
+
 }
- */

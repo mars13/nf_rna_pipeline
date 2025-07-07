@@ -5,9 +5,9 @@ process stringtie {
 
     input:
     tuple val(sample_id), val(stringtie), path(bam) // Tuple of sample id and star result bam
-    val chr                                  // Chromosome exclusion list 
-    val reference_gtf                        // Reference gtf file location
-    val outdir                               // Path to output directory
+    val chr                                         // Chromosome exclusion list 
+    val reference_gtf                               // Reference gtf file location
+    val outdir                                      // Path to output directory
 
     output:
     path "${sample_id}/${sample_id}.gtf" // Path to the output gtf of stringtie

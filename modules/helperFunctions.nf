@@ -74,7 +74,6 @@ def check_files(name, path, type) {
     }
 }
 
-
 def checkInputFiles() {
     // Check inputs
     default_strand =  "${params.outdir}/check_strandedness/strandedness_all.txt"
@@ -176,5 +175,54 @@ def checkInputFiles() {
     log.info "\n==========================\n"
 }
 
+/*
+ * Checks whether all samples in a samplesheet are paired-end or single-end.
+ * Throws an error if there's a mix.
+ *
+ * @param samplesheet_path path to CSV samplesheet
+ * @return true if all samples are paired-end, false if all are single-end
+ */
+def is_paired_end(String filePath) {
+    def uniqueFlags = new HashSet()
+    def headerParsed = false
+    int idx_filename_1 = -1
+    int idx_filename_2 = -1
 
+    new File(filePath).eachLine { line ->
+        if (!line.trim()) return  // skip empty lines
 
+        def cols = line.split(",")*.trim()
+
+        if (!headerParsed) {
+            idx_filename_1 = cols.indexOf("filename_1")
+            idx_filename_2 = cols.indexOf("filename_2")
+
+            if (idx_filename_1 == -1 || idx_filename_2 == -1) {
+                throw new IllegalArgumentException("Samplesheet missing required columns 'filename_1' or 'filename_2'")
+            }
+            headerParsed = true
+        } else {
+            def f1 = (idx_filename_1 < cols.size()) ? cols[idx_filename_1] : null
+            def f2 = (idx_filename_2 < cols.size()) ? cols[idx_filename_2] : null
+
+            if (!f1) {
+                throw new IllegalArgumentException("Missing filename_1 in row: ${line}")
+            }
+
+            uniqueFlags.add(f2 ? true : false)
+
+            if (uniqueFlags.size() > 1) {
+                throw new IllegalArgumentException("Mixed paired-end and single-end data detected in samplesheet! Please only use one type of data")
+            }
+        }
+    }
+
+    if (!headerParsed) {
+        throw new IllegalArgumentException("Samplesheet is empty or missing header.")
+    }
+    if (uniqueFlags.isEmpty()) {
+        throw new IllegalArgumentException("Samplesheet contains no data rows.")
+    }
+
+    return uniqueFlags.iterator().next()
+}
