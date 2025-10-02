@@ -39,10 +39,9 @@ workflow RNASEQ {
             tuple(meta.id, read_files)
         }
 
-    reads.view()
+    //reads.view()
     multiqc_files = Channel.empty()
 
- 
     //TODO handle bamfiles from samplesheet
     //TODO handle WGS vcfs from samplesheet
     
@@ -110,13 +109,12 @@ workflow RNASEQ {
             bam = Channel.fromFilePairs(default_bams, size: 1, checkIfExists: true)
         } else {
             bam = null
-         }
+        }
     }
 
     /*
     * Step 03: Assemble transcriptome
     */
-    //paired_end.view()
     if ((params.assembly || params.merge) && paired_end_check == true) {
         // Join the strand info with the bam file to prevent sample mixing
         stringtie_input = strand.join(bam)
@@ -140,6 +138,7 @@ workflow RNASEQ {
 
         assembled_gtf = ASSEMBLY.out.merged_filtered_gtf
         assembled_fasta = ASSEMBLY.out.assembled_transcriptome_fasta
+        multiqc_files = multiqc_files.mix(ASSEMBLY.out.stringtie_multiqc)
     } else{
         assembled_gtf = null
         assembled_fasta = null
@@ -183,6 +182,9 @@ workflow RNASEQ {
             params.reference_gtf,
             params.output_basename,
             params.outdir)
+        multiqc_files = multiqc_files.mix(EXPRESSION.out.salmon_multiqc)
+        multiqc_files = multiqc_files.mix(EXPRESSION.out.salmon_tpm)
+        multiqc_files = multiqc_files.mix(EXPRESSION.out.test)
     }
 
     /*

@@ -1,6 +1,6 @@
 // Define process for GTF merging
 process mergeGTF {
-    label "assembly"
+    label "compareGTF"
     publishDir "${outdir}/gffcompare", mode: 'copy'
 
     input:

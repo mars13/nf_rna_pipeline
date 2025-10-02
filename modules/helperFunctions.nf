@@ -48,6 +48,7 @@ def check_files(name, path, type) {
     if(!path) {
         error "When running merge without assembly you must provide `${name}`."
     } else {
+        def file_to_check = null
         if (type == "dir") {
             file_to_check = file(path, type: "dir")
         } else {
@@ -76,7 +77,7 @@ def check_files(name, path, type) {
 
 def checkInputFiles() {
     // Check inputs
-    default_strand =  "${params.outdir}/check_strandedness/strandedness_all.txt"
+    def default_strand =  "${params.outdir}/check_strandedness/strandedness_all.txt"
     if (!params.qc && ( params.align || params.assembly )) {
         if (!params.strand_info && file(default_strand, type : "file").exists()) {
             log.info "strand info   : ${default_strand}".stripIndent()
@@ -91,8 +92,8 @@ def checkInputFiles() {
     }
 
     // Locate bams
-    default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
-    bam_avail = true
+    def default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
+    def bam_avail = true
     if (!params.align) {
         if (!params.bam_files && !file(default_bams).isEmpty()) {
             log.info "bam files     : ${default_bams}".stripIndent()
@@ -134,7 +135,7 @@ def checkInputFiles() {
         if(!params.sample_gtf_list) {
             error "When running merge without assembly you must provide `sample_gtf_list`.".stripIndent()
         } else {
-            sample_gtf_list = file(params.sample_gtf_list, type: "file")
+            def sample_gtf_list = file(params.sample_gtf_list, type: "file")
             if (!sample_gtf_list.exists()) {
                 error  "--sample_gtf_list: file doesn't exist, check path ${params.sample_gtf_list}".stripIndent()
             }
@@ -160,7 +161,7 @@ def checkInputFiles() {
 
     // Check expression parameters
     if (params.expression) {
-        assert params.expression_mode in ["sq", "sa", "sqfc", "safc"], "`expression_mode` must be one of the following: sq, sa, sqfc, safc"
+        assert params.expression_mode in ["sq", "sa", "sqfc", "safc"]: "`expression_mode` must be one of the following: sq, sa, sqfc, safc"
 
         if (!bam_avail & (params.expression_mode != "sq")) {
             log.info "expression mode  : ${params.expression_mode} --> sq [forced to quasi-mapping, no bam avail]"

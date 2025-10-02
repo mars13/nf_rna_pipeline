@@ -215,3 +215,83 @@ write_tsv(txi.id$counts, gene_ID_counts_file)
 write_tsv(txi.id$abundance, gene_ID_tpms_file)
 write_tsv(txi.name$counts, gene_name_counts_file)
 write_tsv(txi.name$abundance, gene_name_tpms_file)
+
+
+# Multiqc tables
+
+# Per-sample summary (mean and optional median, with and without zeros)
+sample_summary <- function(mat, prefix, median = FALSE) {
+  df <- data.frame(sample = colnames(mat),
+                  #mean_all = colMeans(mat, na.rm = TRUE),
+                  mean_bigger_than_1 = apply(mat, 2, function(x) mean(x[x>1], na.rm=TRUE)))
+  if (median) {
+    df$median_bigger_than_1 <- apply(mat, 2, function(x) median(x[x>1], na.rm=TRUE))
+  }
+  setNames(df, c("sample", paste0(prefix, "_", names(df)[-1])))
+}
+
+# Parse Salmon meta_info.json for multiple samples
+salmon_qc <- function(quant_files) {
+  cols <- c("num_processed", "num_mapped", "percent_mapped")
+  
+  do.call(rbind, lapply(names(quant_files), function(smp) {
+    f <- file.path(dirname(quant_files[smp]), "aux_info/meta_info.json")
+    qc <- if (file.exists(f)) tryCatch(rjson::fromJSON(file = f), error = function(e) list()) else list()
+    data.frame(sample = smp, t(vapply(cols, function(x) qc[[x]] %||% NA, numeric(1))),
+              stringsAsFactors = FALSE)
+  }))
+}
+
+multiqc_table <- Reduce(function(x, y) dplyr::full_join(x, y, by="sample"),
+                        list(
+                          #sample_summary(txi$counts, "transcript_counts"),
+                          sample_summary(txi$abundance, "transcript_tpms", median=TRUE),
+                          #sample_summary(txi.id$counts, "gene_ID_counts"),
+                          sample_summary(txi.id$abundance, "gene_ID_tpms", median=TRUE)
+                        ))
+multiqc_table$expressed_transcripts <- colSums(txi$abundance > 1)
+multiqc_table$expressed_genes <- colSums(txi.id$abundance > 1)
+multiqc_table <- dplyr::relocate(
+  multiqc_table,
+  expressed_transcripts, expressed_genes,
+  .before = transcript_tpms_mean_bigger_than_1)
+
+multiqc_table <- dplyr::left_join(salmon_qc(quant_files), multiqc_table, by="sample")
+
+name_map <- c(
+  sample = "Sample",
+  num_processed = "Reads Processed",
+  num_mapped = "Reads Mapped",
+  percent_mapped = "Percent Mapped",
+  expressed_transcripts = "Transcripts with TPM >1",
+  expressed_genes = "Genes with TPM >1",
+  #transcript_counts_mean_all = "Transcript Mean Counts",
+  #transcript_counts_mean_bigger_than_1 = "Transcript Mean Counts >1",
+  #transcript_tpms_mean_all = "Transcript Mean TPM",
+  transcript_tpms_mean_bigger_than_1= "Transcript Mean TPM >1",
+  transcript_tpms_median_bigger_than_1 = "Transcript Median TPM >1",
+  #gene_ID_counts_mean_all = "Gene Mean Counts",
+  #gene_ID_counts_mean_bigger_than_1 = "Gene Mean Counts >1",
+  #gene_ID_tpms_mean_all = "Gene Mean TPM",
+  gene_ID_tpms_mean_bigger_than_1 = "Gene Mean TPM >1",
+  gene_ID_tpms_median_bigger_than_1 = "Gene Median TPM >1"
+)
+
+multiqc_table <- multiqc_table %>%
+  rename_with(~ name_map[.x]) 
+
+write.table(multiqc_table,
+            file = paste0(prefix, "_multiqc_summary_mqc.tsv"),
+            sep = "\t",
+            row.names = FALSE,
+            col.names = TRUE,
+            quote = FALSE)
+
+# Copy TPMs
+tpm_filtered <- as.data.frame(txi$abundance)
+# Replace low values with NA
+tpm_filtered[tpm_filtered < 1] <- NA
+# Write outputs
+readr::write_tsv(tpm_filtered, paste0(prefix, "_transcript_tpms_mqc.tsv"), col_names = TRUE)
+
+

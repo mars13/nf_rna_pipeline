@@ -52,10 +52,17 @@ workflow EXPRESSION {
 
     // Run the salmon_tables Rscript to obtain expression tables
     salmon_tables(quant_paths, input_gtf, output_basename, outdir)
+    salmon_multiqc = salmon_tables.out.salmon_multiqc
+    salmon_tpm = salmon_tables.out.salmon_tpm
+    test = salmon_quasi.out.test
 
     // Run featurecounts if bam files for input exist and strand info is available
     if (featurecounts_input != null && paired_end == true){
-       featurecounts(featurecounts_input, input_gtf, outdir)
+    featurecounts(featurecounts_input, input_gtf, outdir)
     }
-    
+
+    emit:
+    salmon_multiqc
+    salmon_tpm
+    test
 }

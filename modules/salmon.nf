@@ -1,3 +1,4 @@
+// Create Salmon index file
 process salmon_index {
     label "salmon"
 
@@ -13,42 +14,44 @@ process salmon_index {
     """
 }
 
+// Run Salmon quant mode
 process salmon_quasi {
     label "salmon"
     publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/quant.sf"
 
     input:
-    tuple(val(sample_id), path(reads)) // Tuple of sample id and input read file(s)
+    tuple val(sample_id), path(reads)  // Tuple of sample id and input read file(s)
     val paired_end                     // Bool, is data paired end or not
     path salmon_index                  // Path to the salmon index
     val outdir                         // Path to the output directory
 
     output:
     path "${sample_id}/quant.sf", emit: quant
+    path "${sample_id}", emit: test
 
     script:
-        if (paired_end == true){
-            // Set salmon quant paired end input arguments
-            quant_input = """-1 "${reads[0]}" -2 "${reads[1]}" """
-        } else {
-            // Set salmon quant single end input arguments
-            quant_input = """-r "${reads[0]}" """
-        }
-
-        """
-        salmon quant \
-        --libType "A" \
-        --validateMappings \
-        --gcBias \
-        --quiet \
-        --numGibbsSamples 30 \
-        --threads $task.cpus \
-        -i "${salmon_index}" \
-        ${quant_input} \
-        --output "${sample_id}"
-        """
+    if (paired_end == true){
+        // Set salmon quant paired end input arguments
+        quant_input = """-1 "${reads[0]}" -2 "${reads[1]}" """
+    } else {
+        // Set salmon quant single end input arguments
+        quant_input = """-r "${reads[0]}" """
+    }
+    """
+    salmon quant \
+    --libType "A" \
+    --validateMappings \
+    --gcBias \
+    --quiet \
+    --numGibbsSamples 30 \
+    --threads $task.cpus \
+    -i "${salmon_index}" \
+    ${quant_input} \
+    --output "${sample_id}"
+    """
 }
 
+// Run Salmon using input BAM file
 process salmon_bam {
     label "salmon"
     publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
@@ -75,7 +78,7 @@ process salmon_bam {
     """
 }
 
-
+// Create satistics table using the salmon output
 process salmon_tables {
     label "salmon_tables"
     publishDir "${outdir}/salmon", mode: 'copy', pattern: "${prefix}*"
@@ -88,6 +91,8 @@ process salmon_tables {
 
     output:
     path "${prefix}*"
+    path "${prefix}_multiqc_summary_mqc.tsv", emit: salmon_multiqc
+    path "${prefix}_transcript_tpms_mqc.tsv", emit: salmon_tpm
 
     script:
     """
@@ -98,14 +103,15 @@ process salmon_tables {
     """
 }
 
+// Run featurecounts 
 process featurecounts {
     label "featurecounts"
     publishDir "${outdir}/featurecounts", mode: 'copy'
 
     input:
     tuple val(sample_id), val(featurecounts), path(bam) // Tuple of sample id and input read file(s)
-    val reference_gtf                                    // Path to the input reference gtf file
-    val outdir                                           // Path to output directory
+    val reference_gtf                                   // Path to the input reference gtf file
+    val outdir                                          // Path to output directory
 
     output:
     path "${sample_id}/*"

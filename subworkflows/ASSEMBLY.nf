@@ -1,4 +1,4 @@
-include { stringtie } from '../modules/stringtie'
+include { stringtie; stringtie_summary } from '../modules/stringtie'
 include { mergeGTF; filterAnnotate; transcriptome_fasta } from '../modules/mergeTranscriptome'
 
 workflow ASSEMBLY {
@@ -30,9 +30,17 @@ workflow ASSEMBLY {
         // Run stringtie
         stringtie(stringtie_input, chromosome_exclusion_list, reference_gtf, outdir)
 
+        stringtie_summary(stringtie.out.stringtie_gtf.collect(),
+                        reference_gtf,
+                        outdir)
+
+        stringtie_multiqc = stringtie_summary.out.stringtie_multiqc
+
         // Wait untill all stringtie runs are completed
         gtf_paths = stringtie.out.collect().flatten()
                     .map { it -> it.toString() } // Change paths to strings
+
+        
 
         // Store gtflist in outputdir
         // replaceFirst is a groovy statement to replace part of a string based on a pattern
@@ -47,6 +55,8 @@ workflow ASSEMBLY {
             name: 'gtflist.txt',
             newLine: true, sort: true )
 
+    } else {
+        stringtie_multiqc = null
     }
 
     // Merges the gtf files created by stringtie
@@ -90,6 +100,7 @@ workflow ASSEMBLY {
         assembled_transcriptome_fasta = null
     }
     emit:
+    stringtie_multiqc
     merged_filtered_gtf
     assembled_transcriptome_fasta
 }
