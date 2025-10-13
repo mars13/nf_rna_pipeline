@@ -1,3 +1,4 @@
 sample_id,subject_id,sample_type,sequence_type,file_type,filename_1,filename_2
 B13,S8,tumor,rna,fastq,/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/B13_S8_R1_001.fastq.gz,/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/B13_S8_R2_001.fastq.gz
 B15,S9,tumor,rna,fastq,/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/B15_S9_R1_001.fastq.gz,/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/B15_S9_R2_001.fastq.gz
+G15,S9,tumor,dna,vcf,/hpc/pmc_oatv/projects/aml_maxima_pilot/analysis/wgs/gridss/PMCID043AAQ/PMGBM963AAC/gridss/PMGBM963AACT.gridss.unfiltered.vcf.gz,

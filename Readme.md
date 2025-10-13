@@ -7,7 +7,7 @@ This pipeline is designed for the analysis of RNA-seq data, covering various mod
 1. **Quality Control and Adapter Trimming**: Utilizes FastP for assessing the quality of raw sequencing data and trims adapters and filters low-quality reads. Additionaly confirms strandedness for downstream transcriptome assembly.
 2. **Alignment**: Aligns processed reads to a reference genome using STAR.
 3. **Transcriptome Assembly**: Assembles transcripts of individual samples with stringtie, merges all samples and checks against a reference with GFFcompare, and finally filters the merged transcriptome.
-4. **Fusions**: Detects gene fusions using Arriba.
+4. **Fusions**: Detects gene fusions using Arriba, optionally takes vcf files from WGS to refine confidence thresholds.
 5. **Expression Analysis**: Quantifies gene expression using Salmon.
 
 ## Usage
@@ -18,7 +18,7 @@ This pipeline is designed for the analysis of RNA-seq data, covering various mod
 
     - **Inputs**: Parameters are specified in `params.config`. See an example [here](https://github.com/mars13/nf_rna_pipeline/blob/dev/test/documentation/test_params.config). Alternatively, they can be provided as command-line arguments if double-dashed (`--samplesheet`). A detailed description of the required inputs can be found in the [Inputs](#inputs) section.
 
-    - **Modules**: Adjust settings in `params.config` to toggle pipeline modules on and off (`qc`, `align`, `assembly`, `merge`, `fusion`, `expression`).
+    - **Modules**: Adjust settings in `params.config` to toggle pipeline modules on and off (`qc`, `align`, `assembly`, `merge`, `fusion`, `expression`). All steps are set to `true` by default.
     
     ```
         params {
@@ -32,9 +32,16 @@ This pipeline is designed for the analysis of RNA-seq data, covering various mod
 
     - **Reference and other files**: Define paths to reference files, optional inputs, and other settings in `params.config`.
 
-    - **Containers**: Modify process containers in `nextflow.config` for tools like Trimmomatic, STAR, StringTie, etc., as per your environment. Expected to be provided with the pipeline in the future.
+    - **Containers**: Modify process containers in `params.config` for tools like Trimmomatic, STAR, StringTie 2/3, etc., as per your environment. Note: This is expected to be provided with the pipeline in the future.
 
-2. **Run the Pipeline**:
+2. **Pull repository**:
+    To keep up with the latest version pull the repository if it has already been downloaded.
+
+    ```bash
+    nextflow pull mars13/nf_rna_pipeline
+    ```
+
+3. **Run the Pipeline**:
 
     ```bash
     nextflow run mars13/nf_rna_pipeline -c params.config -profile [local/slurm]
@@ -42,25 +49,11 @@ This pipeline is designed for the analysis of RNA-seq data, covering various mod
 
     Additional nextflow run options can be provided. See [nextflow docs](https://www.nextflow.io/docs/latest/cli.html#run) for more information.
 
-    Add or overwrite params in the config files with double dashed arguments:
-    
-    ```bash
-    nextflow run mars13/nf_rna_pipeline --align false --bam_files precomputed_aligment/**.Aligned.sortedByCoord.out.bam -c params.config -profile [local/slurm]
-    ```
-
-
-
-3. **Pull repository**:
-    To keep up with the latest version pull the repository if it has already been downloaded.
-
-    ```bash
-    nextflow pull mars13/nf_rna_pipeline
-    ```
 
 ## Inputs
 
 ### Samplesheet
-- The samplesheet is a critical input for the RNA pipeline. It is a structured file,in CSV format, that lists all the samples to be processed. Each row represents a sample with detailed information required by the pipeline. Below is a breakdown of the expected columns and their constraints:
+- The samplesheet is a critical input for the RNA pipeline. It is a structured CSV file that lists all samples and files to be processed. Each row represents a sample with detailed information required by the pipeline. Below is a breakdown of the expected columns and their constraints:
 
 | **Column Name**  | **Description**                                                                     | **Required** | **Constraints**                                                                 |
 |------------------|---------------------------------------------------------------------------------|--------------|---------------------------------------------------------------------------------|
@@ -69,9 +62,11 @@ This pipeline is designed for the analysis of RNA-seq data, covering various mod
 | `group_id`       | (Optional) Identifier for the sample group (e.g., cohort).                      | No           | Must be a string without spaces. If left empty, it must be omitted entirely.    |
 | `sample_type`    | Type of sample: either `tumor` or `normal`.                                     | Yes          | Must be either `tumor` or `normal`.                                             |
 | `sequence_type`  | Specifies the type of sequencing data: `rna` or `dna`.                          | Yes          | Must be either `rna` or `dna`.                                                  |
-| `file_type`      | Format of the input files, e.g., `fastq`, `bam`, `cram`, `vcf`, `csv`, `tsv`.   | Yes          | Must be one of the supported formats: `fastq`, `bam`, `cram`, `vcf`, `csv`, etc.|
+| `file_type`      | Format of the input files, e.g., `fastq`.   | Yes          | Must be one of the supported formats: `fastq`, `bam`, `cram`, `vcf`, `csv`, etc. *|
 | `filename_1`     | Path to the first file (e.g., R1 FASTQ file for paired-end or single-end data).  | Yes          | Must be a valid file path with no spaces. File extension must match `file_type`. |
 | `filename_2`     | (Optional) Path to the second file (e.g., R2 FASTQ file for paired-end data).    | No           | Must be a valid file path with no spaces. If not applicable, leave empty.       |
+
+(*) Note: Not all suported formats can be used within the pipeline. I.e. bams/crams are still not implemented as input.
 
 **Example samplesheet**:
 ```
@@ -82,8 +77,9 @@ subject3,sampleC,cohort2,tumor,dna,vcf,/path/to/sampleC.vcf,
 ```
 
 Notes:
--	All file paths (filename_1 and filename_2) must not contain spaces and should have extensions that match the declared file_type.
--	For single-end data or non-FASTQ files (e.g., BAM, VCF), filename_2 can be omitted or left empty.
+- All file paths (filename_1 and filename_2) must not contain spaces and should have extensions that match the declared file_type.
+- Subject and sample ids must contain charaters (only numeric values will not be read properly).
+- For single-end data or non-FASTQ files (e.g., BAM, VCF), filename_2 can be omitted or left empty.
 
 ### Parameter specification
 | **Parameter**               | **Description**                                                                                     | **Type**   | **Required** | **Used by Module**                | **Default**                          |

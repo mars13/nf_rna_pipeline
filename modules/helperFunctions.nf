@@ -25,7 +25,7 @@ def check_duplicate_samples(String filePath) {
         if (line.trim()) {
             def columns = line.split(',')
             // Obtain values from first columns
-            def first_column_value = columns[1].trim()
+            def first_column_value = columns[0].trim()
 
             // Check if the value is unique
             if (unique_values.contains(first_column_value)) {
@@ -188,6 +188,7 @@ def is_paired_end(String filePath) {
     def headerParsed = false
     int idx_filename_1 = -1
     int idx_filename_2 = -1
+    int idx_sequence = -1
 
     new File(filePath).eachLine { line ->
         if (!line.trim()) return  // skip empty lines
@@ -197,12 +198,20 @@ def is_paired_end(String filePath) {
         if (!headerParsed) {
             idx_filename_1 = cols.indexOf("filename_1")
             idx_filename_2 = cols.indexOf("filename_2")
+            idx_sequence = cols.indexOf("sequence_type")
 
             if (idx_filename_1 == -1 || idx_filename_2 == -1) {
                 throw new IllegalArgumentException("Samplesheet missing required columns 'filename_1' or 'filename_2'")
             }
+            if (idx_sequence == -1) {
+                throw new IllegalArgumentException("Samplesheet missing required column 'sequence'")
+            }
             headerParsed = true
         } else {
+            def sequence = (idx_sequence < cols.size()) ? cols[idx_sequence] : null
+
+            if (sequence?.toLowerCase() == "dna") return  // ignore DNA entries
+
             def f1 = (idx_filename_1 < cols.size()) ? cols[idx_filename_1] : null
             def f2 = (idx_filename_2 < cols.size()) ? cols[idx_filename_2] : null
 

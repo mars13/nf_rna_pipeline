@@ -81,7 +81,8 @@ workflow ASSEMBLY {
         //scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
         
         // Run filter annotate r script
-        filterAnnotate(reference_gtf,
+        // TODO: Sort exons in gtf and add transcript biotype for stringtie tx
+        filterAnnotate( reference_gtf,
                         refseq_gtf ?: "",
                         gtf_novel,
                         gtf_tracking,

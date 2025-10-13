@@ -47,13 +47,12 @@ process runArriba{
     publishDir "${outdir}/arriba/${sample_id}", mode: 'copy', pattern: "${sample_id}_fusions*"
 
     input:
-    tuple val(sample_id), val(bam)
+    tuple val(sample_id), val(bam), val(vcf)
     val fa
     val gtf
     val blacklist
     val whitelist
     val protein_domains
-    val wgs
     val outdir
 
     output:
@@ -63,7 +62,7 @@ process runArriba{
     def blacklist_options = blacklist.toString().contains("EMPTY") ?  "-f blacklist" : "-b ${blacklist}"
     def whitelist_options = whitelist.toString().contains("EMPTY") ? "" : "-k ${whitelist} -t ${whitelist}"
     def domains_options = protein_domains.toString().contains("EMPTY") ? "" : "-p ${protein_domains}"
-    def wgs_options = wgs.toString().contains("EMPTY") ?  "" : "-d ${wgs}"
+    def wgs_options = (vcf == null) ? "" : "-d ${vcf}"
 
     """
     mkdir -p ${sample_id}/
@@ -72,7 +71,7 @@ process runArriba{
     -O ${sample_id}_fusions.discarded.tsv \
     -a ${fa} \
     -g ${gtf} \
-    ${blacklist_options} ${whitelist_options} ${domains_options}
+    ${wgs_options} ${blacklist_options} ${whitelist_options} ${domains_options}
     """
 }
 

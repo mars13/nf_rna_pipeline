@@ -31,7 +31,7 @@ workflow RNASEQ {
 
     // Create channel with sample id and RNA reads (single or paired)
     reads = ch_input
-        .filter { meta, filename_1, filename_2 ->
+        .filter { meta, _filename_1, _filename_2 ->
             meta.filetype == "fastq" && meta.sequence == "rna"
         }
         .map { meta, fastq_1, fastq_2 ->
@@ -39,12 +39,38 @@ workflow RNASEQ {
             tuple(meta.id, read_files)
         }
 
-    //reads.view()
+    // Build patient_id maps for wgs matching
+    rna_map = ch_input
+        .filter { meta, _filename_1, _filename_2 -> meta.sequence == "rna" }
+        .map { meta, _filename_1, _filename_2 -> [meta.subject, meta.id] }
+
     multiqc_files = Channel.empty()
 
     //TODO handle bamfiles from samplesheet
-    //TODO handle WGS vcfs from samplesheet
-    
+
+    //Handle WGS vcfs from samplesheet
+    vcfs = ch_input
+        .filter { meta, _filename_1, _filename_2 ->
+            meta.filetype == "vcf" && meta.sequence == "dna"
+        }
+        .map { meta, filename_1, _filename_2 ->
+            tuple(meta.subject, filename_1)
+        }
+
+    // Match to rna sample id
+    // Note: this will only work if there's one vcf per patient
+    // If multiple vcfs per patient, vcf can me merged beforhand or match to the right rna sample by adjusting patient ids (i.e. patient1_diagnostic, patient1_relapse for both rna and wgs) 
+
+    vcfs = vcfs
+        .join(rna_map, remainder: true)    // If no vcf returns [sample, null]
+        .map { _patient, vcf, rna_sample_id ->
+            tuple(rna_sample_id, vcf)
+        }
+
+    // Debug input channels
+    //vcfs.view()
+    //reads.view()
+
     /*
     * Step 01: QC
     */
@@ -149,8 +175,10 @@ workflow RNASEQ {
     * TODO: could we combine mapping for fusions and for txome assembly in one?
     */
 
+    // Merge star input with wgs vcfs to prevent sample mixing
     if (params.fusions && paired_end_check == true) {
         FUSIONS(star_input,
+            vcfs,
             paired_end,
             params.arriba_reference,
             params.outdir)
