@@ -40,8 +40,6 @@ workflow FUSIONS {
     arriba_input = fusion_bam
                     .join(vcf)
 
-    arriba_input.view()
-
     // Run Arriba
     runArriba(arriba_input, fa, gtf, blacklist, whitelist, protein_domains, outdir)
 }
