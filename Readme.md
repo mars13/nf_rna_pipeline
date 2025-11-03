@@ -2,6 +2,17 @@
 
 This pipeline is designed for the analysis of RNA-seq data, covering various modules such as alignment, assembly, QC, fusion detection, and expression analysis.
 
+## Index
+- [Overview](#overview)
+- [Usage](#usage)
+  - [Default behaviour and run modes](#default-behaviour-and-run-modes)
+- [Inputs](#inputs)
+  - [Samplesheet](#samplesheet)
+  - [Parameter specification](#parameter-specification)
+  - [Optional inputs for modular execution](#optional-inputs-for-modular-execution)
+- [Outputs](#outputs)
+- [Support and Contributions](#support-and-contributions)
+
 ## Overview
 
 1. **Quality Control and Adapter Trimming**: Utilizes FastP for assessing the quality of raw sequencing data and trims adapters and filters low-quality reads. Additionaly confirms strandedness for downstream transcriptome assembly.
@@ -167,7 +178,11 @@ Notes:
 
 ### Optional inputs for modular execution
 
-- `strand_info`: When not running the QC step, the path to the file containing strand information for each sample can be provided. The file is expected to be plain text file (tab separated, no headers) with two columns: sample_id and strand information (RF/fr-firststrand, FR/fr-secondstrand, unstranded). If `strand_info` is not provided the software will check the default location: `"${outdir}/check_strandedness/strandedness_all.txt"`.
+- `strand_info`: When not running the QC step, the path to the file containing strand information for each sample can be provided. The file is expected to be plain text file (tab separated, no headers) with two columns: sample_id and strand information (`rf` for first strand,`fr` for second strand or `unstranded`). If `strand_info` is not provided the software will check the default location: `"${outdir}/check_strandedness/strandedness_all.txt"`. Example: 
+```
+sample_01 rf
+sample_02 unstranded
+```
 - `bam_files`: When not running the ALIGN step before ASSEMBLY, the path to bam files can be provided as a regular expression. If `bam_files` is not provided the software will check the default location: `"${outdir}/star/**/*.Aligned.sortedByCoord.out.bam"`.
 - `sample_gtf_list`: For merging GTF files from individual samples without prior assembly steps, you are require to provide a file containing the paths to individual GTFs. Example:
 
