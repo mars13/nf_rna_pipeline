@@ -1,6 +1,6 @@
 # Nextflow RNA-seq Pipeline
 
-This pipeline is designed for the analysis of RNA-seq data, covering various modules such as alignment, assembly, QC, fusion detection, and expression analysis. It is flexible and can currently handle paired-end sequencing data (with intention to expand to single-end for the modules that support it).
+This pipeline is designed for the analysis of RNA-seq data, covering various modules such as alignment, assembly, QC, fusion detection, and expression analysis.
 
 ## Overview
 
@@ -49,6 +49,47 @@ This pipeline is designed for the analysis of RNA-seq data, covering various mod
 
     Additional nextflow run options can be provided. See [nextflow docs](https://www.nextflow.io/docs/latest/cli.html#run) for more information.
 
+### Default behaviour and run modes
+
+By default all module toggles are all set to true. 
+
+The pipeline supports mode presets (`params.run_mode` or `--run_mode` from CLI) that change module defaults when the user did not explicitly set the individual toggles.
+
+- qc
+  - Intended for running only the QC step.
+  - Behaviour (applied only when the individual toggle was NOT set by the user):
+    - qc: true
+    - align: false
+    - assembly: false
+    - merge: false
+    - fusions: false
+    - expression: false
+  - Use case: quickly check data quality and strandedness without running downstream analyses.
+
+- qc_restart
+  - Intended to skip QC and run downstream steps (useful after QC already completed).
+  - Behaviour: 
+    - qc: false
+    - align, assembly, merge, fusions, expressions: as defined by the user or true by default
+
+  - Use case: re-run alignment/assembly/expression/fusion modules while avoiding re-running QC.
+
+- manual (default)
+    - No module is automatically enabled or disabled; module execution is controlled entirely by individual toggle parameters (e.g., `--qc`, `--align`, `--assembly`, etc.).
+
+How to use:
+- Set mode in params.config or via CLI:
+
+    ```
+    nextflow run . --run_mode qc
+    nextflow run . --run_mode qc_restart
+    ```
+
+- You can still override any module individually:
+
+    ```
+    nextflow run . --run_mode qc --fusions false
+    ```
 
 ## Inputs
 
@@ -101,6 +142,7 @@ Notes:
 | `kallisto_index`            | Path to the Kallisto index file.                                                                    | string     | No           | `qc`                               |                                      |
 | `arriba_reference`          | Path to the pre-built Arriba reference folder.                                                      | string     | No           | `fusions`                          |                                      |
 | **Modules**                  |                                                                                                     |            |              |                                    |                                      |
+| `run_mode`                  | Pipeline mode preset that affects module defaults ("manual", "qc", "qc_restart").              | string     | No           | All modules                        | `manual`                               |
 | `qc`                        | Toggle for the quality control module.                                                              | boolean    | No           | `qc`                               | `true`                               |
 | `align`                     | Toggle for the alignment module.                                                                    | boolean    | No           | `align`                            | `true`                               |
 | `assembly`                  | Toggle for the assembly module.                                                                     | boolean    | No           | `assembly`                         | `true`                               |
