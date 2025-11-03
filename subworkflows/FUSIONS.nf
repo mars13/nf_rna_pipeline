@@ -11,11 +11,11 @@ workflow FUSIONS {
     main:
 
     // Location to the Arriba reference
-    reference = Channel.fromPath("${arriba_reference}**")
+    reference = channel.fromPath("${arriba_reference}**")
 
     // Check if both fasta and index exists for Arriba reference 
-    fa = Channel.fromPath("${arriba_reference}**.fa", checkIfExists: true).first()
-    fa_fai = Channel.fromPath("${arriba_reference}**.fa.fai", checkIfExists: true).first()
+    fa = channel.fromPath("${arriba_reference}**.fa", checkIfExists: true).first()
+    channel.fromPath("${arriba_reference}**.fa.fai", checkIfExists: true).first()
 
     // Get gtf from the reference folder
     gtf = reference.filter(~/.*\.gtf/).first()
@@ -29,9 +29,6 @@ workflow FUSIONS {
     blacklist = reference.filter(~/.*blacklist.*/).ifEmpty{ file("EMPTY_BLACKLIST")}.first()
     whitelist = reference.filter(~/.*known_fusions.*/).ifEmpty{ file("EMTPY_WHITELIST")}.first()
     protein_domains = reference.filter(~/.*protein_domains.*/).ifEmpty{ file("EMPTY_DOMAINS")}.first()
-
-    // Deprecated, use vcf channel instead
-    //wgs = params.wgs_sv ? Channel.fromFilePairs(params.wgs_sv).ifEmpty{ file("EMPTY_WGS")} : Channel.fromPath("EMPTY_WGS").first()
 
     // Run star mapper
     starAlignChimeric(reads, paired_end, arriba_reference, outdir)

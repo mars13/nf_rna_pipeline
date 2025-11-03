@@ -8,12 +8,11 @@ workflow {
 
     if (params.help) {
 
-        log.info paramsHelp("nextflow run mars13/nf_rna_pipeline -c params.config")
+        log.info paramsHelp("nextflow run mars13/nf_rna_pipeline -c params.config -profile slurm")
 
     } else {
-
+    
         RNASEQ()
     }
 
 }
-

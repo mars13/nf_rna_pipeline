@@ -153,10 +153,6 @@ def checkInputFiles() {
         check_files("arriba_reference STAR_index_*", "${params.arriba_reference}STAR_index*", "dir")
         check_files("arriba_reference *.gtf", "${params.arriba_reference}*.gtf", "file")
         check_files("arriba_reference *.fa", "${params.arriba_reference}*.fa", "file")
-
-        if (params.wgs_sv) {
-            check_files("wgs_sv", "${params.wgs_sv}", "dir")
-        }
     }
 
     // Check expression parameters

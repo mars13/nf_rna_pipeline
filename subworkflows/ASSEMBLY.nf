@@ -64,9 +64,9 @@ workflow ASSEMBLY {
 
         // Load gtf list file if not null
         if (sample_gtf_list) {
-            gtf_list = Channel.fromPath("${sample_gtf_list}")
+            gtf_list = channel.fromPath("${sample_gtf_list}")
             gtf_list
-            .splitText(){ it.trim() }
+            .splitText{ line -> line.trim() }
             .take(1)
             .ifEmpty { error "Could not find sample GTF files in: ${sample_gtf_list}" }
         }

@@ -6,7 +6,7 @@ process indexLength{
     tuple val(sample_id), path(reads) // Tuple containing sample id and read paths
     
     output:
-    env used_index
+    stdout
     
     script:
     """
@@ -31,6 +31,8 @@ process indexLength{
     else
     used_index=99
     fi
+
+    printf "%s" "\${used_index}"
     """
 
 }

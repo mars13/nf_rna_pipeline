@@ -29,26 +29,31 @@ workflow QC {
     kallisto_index // Path to the kallisto index file
     reference_gtf  // Path to the reference gtf 
     outdir         // Path to output dir
+    store_trimmed_reads // Bool, true if trimmed reads need to be stored
 
     main:
     // Run fastp and sets the output fastq file to variable trimmed_reads
-    trimmed_reads = fastp(reads, paired_end, outdir).fastq_files
+    trimmed_reads = fastp(reads, paired_end, outdir, store_trimmed_reads).fastq_files
     fastp_json = fastp.out.fastp_json
-    
+
     // Run strandedness
     if (paired_end_check == true){
-        strand = checkStrand(reads, kallisto_index, reference_gtf, outdir).strand
+         strand = checkStrand(reads, kallisto_index, reference_gtf, outdir).strand
         
-        // Create a file containing the strand of all files
-        checkStrand.out
-                .strand
-                .collectFile(
-                name: 'strandedness_all.txt',
-                storeDir: "${outdir}/check_strandedness/",
-                newLine: true, sort: true)
-
+        // Map strand info to strandedness format used downstream
         strandedness = strand.map{ it -> getStrandtype(it) }
         strand_file = checkStrand.out.strand_file
+
+        // Collect strandedness info into a single file
+        strandedness
+        .map { tup -> "${tup[0]}\t${tup[1]}" }
+        .collectFile(
+            name: 'strandedness_all.txt',
+            storeDir: "${outdir}/check_strandedness/",
+            newLine: true,
+            sort: true
+        )
+
     }else{
         strand = null
         strandedness = null

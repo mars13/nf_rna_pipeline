@@ -10,7 +10,7 @@ process checkStrand {
     val outdir                        // Path to output directory
 
     output:
-    tuple val("${sample_id}"), env(strand_info), emit: strand
+    tuple val("${sample_id}"), stdout, emit: strand
     path "${sample_id}.txt", emit: strand_file
 
     script:
@@ -22,7 +22,7 @@ process checkStrand {
         -r2 ${reads[1]} \
         -k "${kallisto_index}" >> "${sample_id}.txt"
     strandedness=\$(tail -n 1 ${sample_id}.txt | awk 'NF>1{print \$NF}')
-    strand_info=\$(printf "%s\t%s\n" "${sample_id}" "\$strandedness")
-    rm -r stranded_test_*
+    printf "%s\t%s" "${sample_id}" "\$strandedness"
+    rm -r stranded_test_* >&2
     """
 }

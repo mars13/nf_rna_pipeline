@@ -10,6 +10,13 @@ include { MULTIQC } from '../modules/multiqc.nf'
 workflow RNASEQ {
 
     // Initialise workflow
+    // Set module toggles based on run_mode
+    run_qc        = params.run_mode == "qc" ? true  : (params.run_mode == "qc_restart" ? false : params.qc)
+    run_align     = params.run_mode == "qc" ? false : params.align 
+    run_assembly   = params.run_mode == "qc" ? false : params.assembly
+    run_merge      = params.run_mode == "qc" ? false : params.merge
+    run_fusions    = params.run_mode == "qc" ? false : params.fusions
+    run_expression = params.run_mode == "qc" ? false : params.expression
 
     // Validate input parameters
     validateParameters()
@@ -22,12 +29,12 @@ workflow RNASEQ {
 
     // Check if input is paired_end or single end and prevent mixing
     boolean paired_end_check = is_paired_end(params.input)
-    paired_end = Channel.from(paired_end_check).first()
+    paired_end = channel.from(paired_end_check).first()
     println("paired_end_check:")
     println(paired_end_check)
 
     // Create input channel from samplesheet
-    ch_input = Channel.fromList(samplesheetToList(params.input, "assets/schema_input.json"))
+    ch_input = channel.fromList(samplesheetToList(params.input, "assets/schema_input.json"))
 
     // Create channel with sample id and RNA reads (single or paired)
     reads = ch_input
@@ -44,7 +51,7 @@ workflow RNASEQ {
         .filter { meta, _filename_1, _filename_2 -> meta.sequence == "rna" }
         .map { meta, _filename_1, _filename_2 -> [meta.subject, meta.id] }
 
-    multiqc_files = Channel.empty()
+    multiqc_files = channel.empty()
 
     //TODO handle bamfiles from samplesheet
 
@@ -67,20 +74,17 @@ workflow RNASEQ {
             tuple(rna_sample_id, vcf)
         }
 
-    // Debug input channels
-    //vcfs.view()
-    //reads.view()
-
     /*
     * Step 01: QC
     */
-    if (params.qc) {
+    if (run_qc) {
         QC(reads,
         paired_end_check, 
         paired_end,
         params.kallisto_index,
         params.reference_gtf,
-        params.outdir)
+        params.outdir,
+        params.store_trimmed_reads)
         
         star_input = QC.out.trimmed_reads
         strand = QC.out.strandedness
@@ -89,38 +93,52 @@ workflow RNASEQ {
         multiqc_files = multiqc_files.mix(QC.out.strand_file)
 
     } else {
-        default_trimmed_reads = "${params.outdir}/**/*{R1,R2}*_trimmed.{fastq.gz,fq.gz}"
-        if (file(default_trimmed_reads).isEmpty()) {
-            star_input = reads
-            log.info "No trimmed reads found from QC step, using input reads."
+        // Look for trimmed reads from previous QC run
+        trimmed_glob = "${params.outdir}/**/*{R1,R2}*_trimmed.{fastq.gz,fq.gz}"
+        
+        // Checl if file(trimmed_glob) expected to be list of files is not empty
+        if (!file(trimmed_glob).isEmpty()) {
+            if (!params.bam_files) {
+                log.info "Using trimmed reads from previous QC: ${trimmed_glob}"
+                star_input = channel.fromFilePairs(trimmed_glob, size: paired_end ? 2 : 1, checkIfExists: true)
+            } else {
+                log.info "BAM files provided, skipping use of trimmed reads."
+                star_input = null
+            }
         } else {
-            //log.info "Using trimmed reads in: ${default_trimmed_reads}" MISLEADING WHEN BAM IS PRESENT, TODO change or remove
-            star_input = Channel
-                .fromFilePairs(default_trimmed_reads, size: paired_end ? 2 : 1, checkIfExists: true)
+            log.info "No trimmed reads found. Using raw input reads."
+            star_input = reads
         }
 
         // Look for strandedness summary file
-        default_strand_files = "${params.outdir}/check_strandedness/strandedness_all.txt"
+        default_strand_file = "${params.outdir}/check_strandedness/strandedness_all.txt"
         if (params.strand_info) {
-            Channel.fromPath(params.strand_info, checkIfExists: true)
-            .splitText(){ it.trim() }
-            .set { strand }
 
-            log.info
-        } else if (!file(default_strand_files).isEmpty()) {
-            Channel.fromPath(default_strand_files, checkIfExists: true)
-            .splitText(){ it.trim() }
-            .set { strand }
+            log.info "Using strandedness info from user-provided file: ${params.strand_info}"
+
+            channel.fromPath(params.strand_info, checkIfExists: true)
+            .splitText { line -> line.trim() }
+
+        } else if (params.run_mode == "qc_restart" && !file(default_strand_file).isEmpty()) {
+
+            log.info "Using strandedness from previous QC: ${default_strand_file}"
+
+            channel.fromPath(default_strand_file, checkIfExists: true)
+                .splitCsv(sep: "\t", header: false)
+                .set { strand }
         } else {
+
+            log.info "No strandedness provided or found, setting strand to `null`. WARNING: It will conflict with assembly step."
+            log.info "You can specify path to strandedness info file using --strand_info parameter."
+
             strand = null
-            log.info "No strandedness provided, setting strand to `null`. WARNING: It will conflict with assembly step."
         }
     }
 
     /*
     *Step 02: Align
     */
-    if (params.align){
+    if (run_align){
         ALIGN(star_input, paired_end, params.reference_gtf, params.star_index_basedir, params.outdir)
         bam = ALIGN.out.bam
         multiqc_files = multiqc_files.mix(ALIGN.out.star_log)
@@ -130,26 +148,31 @@ workflow RNASEQ {
         // Look for alignment files in case star has been run previously
         default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
         if (params.bam_files) {
-            bam = Channel.fromFilePairs(params.bam_files, size: 1, checkIfExists: true)
+            bam = channel.fromFilePairs(params.bam_files, size: 1, checkIfExists: true)
         } else if (!file(default_bams).isEmpty()) { // TODO: do we need this function?
-            bam = Channel.fromFilePairs(default_bams, size: 1, checkIfExists: true)
+            bam = channel.fromFilePairs(default_bams, size: 1, checkIfExists: true)
         } else {
             bam = null
         }
     }
 
+    bam.view()
+
     /*
     * Step 03: Assemble transcriptome
     */
-    if ((params.assembly || params.merge) && paired_end_check == true) {
+    if ((run_assembly || run_merge) && paired_end_check == true) {
+
         // Join the strand info with the bam file to prevent sample mixing
         stringtie_input = strand.join(bam)
         .map { row ->
                 def sample_id = row[0]    // Sample Id
                 def strand_label = row[1] // Strand value
-                def file_path = row[3]    // BAM file path
+                def file_path = row[2]    // BAM file path
                 [sample_id, strand_label, file_path]
             }
+
+        stringtie_input.view()
 
         ASSEMBLY(stringtie_input,
                 params.sample_gtf_list,
@@ -176,7 +199,7 @@ workflow RNASEQ {
     */
 
     // Merge star input with wgs vcfs to prevent sample mixing
-    if (params.fusions && paired_end_check == true) {
+    if (run_fusions && paired_end_check == true) {
         FUSIONS(star_input,
             vcfs,
             paired_end,
@@ -187,7 +210,7 @@ workflow RNASEQ {
     /*
     * Step 05: Expression
     */
-    if (params.expression ) {
+    if (run_expression) {
         // Join the strand info with the bam file to prevent sample mixing
         if (paired_end_check == true){
             featurecounts_input = strand.join(bam)
