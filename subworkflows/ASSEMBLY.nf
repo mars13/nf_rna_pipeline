@@ -26,7 +26,6 @@ workflow ASSEMBLY {
             chromosome_exclusion_list = null
         }
 
-
         // Run stringtie
         stringtie(stringtie_input, chromosome_exclusion_list, reference_gtf, outdir)
 
@@ -39,8 +38,6 @@ workflow ASSEMBLY {
         // Wait untill all stringtie runs are completed
         gtf_paths = stringtie.out.collect().flatten()
                     .map { it -> it.toString() } // Change paths to strings
-
-        
 
         // Store gtflist in outputdir
         // replaceFirst is a groovy statement to replace part of a string based on a pattern
@@ -100,6 +97,7 @@ workflow ASSEMBLY {
         merged_filtered_gtf = null
         assembled_transcriptome_fasta = null
     }
+    
     emit:
     stringtie_multiqc
     merged_filtered_gtf

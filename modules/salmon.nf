@@ -27,7 +27,6 @@ process salmon_quasi {
 
     output:
     path "${sample_id}/quant.sf", emit: quant
-    path "${sample_id}", emit: test
 
     script:
     if (paired_end == true){

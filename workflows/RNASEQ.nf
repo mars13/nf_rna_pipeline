@@ -149,14 +149,12 @@ workflow RNASEQ {
         default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
         if (params.bam_files) {
             bam = channel.fromFilePairs(params.bam_files, size: 1, checkIfExists: true)
-        } else if (!file(default_bams).isEmpty()) { // TODO: do we need this function?
+        } else if (!file(default_bams).isEmpty()) {
             bam = channel.fromFilePairs(default_bams, size: 1, checkIfExists: true)
         } else {
             bam = null
         }
     }
-
-    bam.view()
 
     /*
     * Step 03: Assemble transcriptome
@@ -172,8 +170,6 @@ workflow RNASEQ {
                 [sample_id, strand_label, file_path]
             }
 
-        stringtie_input.view()
-
         ASSEMBLY(stringtie_input,
                 params.sample_gtf_list,
                 params.reference_gtf,
@@ -188,14 +184,13 @@ workflow RNASEQ {
         assembled_gtf = ASSEMBLY.out.merged_filtered_gtf
         assembled_fasta = ASSEMBLY.out.assembled_transcriptome_fasta
         multiqc_files = multiqc_files.mix(ASSEMBLY.out.stringtie_multiqc)
-    } else{
+    } else {
         assembled_gtf = null
         assembled_fasta = null
     }
     
     /*
     * Step 04: Fusion calling
-    * TODO: could we combine mapping for fusions and for txome assembly in one?
     */
 
     // Merge star input with wgs vcfs to prevent sample mixing
@@ -220,9 +215,10 @@ workflow RNASEQ {
                     def file_path = row[3]    // BAM file path
                     [sample_id, strand_code, file_path]
                 }
-        }else{
+        } else {
             featurecounts_input = null
         }
+        
         EXPRESSION(star_input,
             featurecounts_input,
             assembled_gtf,
@@ -235,7 +231,6 @@ workflow RNASEQ {
             params.outdir)
         multiqc_files = multiqc_files.mix(EXPRESSION.out.salmon_multiqc)
         multiqc_files = multiqc_files.mix(EXPRESSION.out.salmon_tpm)
-        multiqc_files = multiqc_files.mix(EXPRESSION.out.test)
     }
 
     /*

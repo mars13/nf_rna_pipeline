@@ -23,8 +23,7 @@ workflow EXPRESSION {
         input_gtf = assembled_gtf.first()
         input_transcriptome = assembled_fasta.first()
         println "Using assembled transcriptome for quantification"
-    }
-    else{
+    } else {
         input_gtf = reference_gtf
         input_transcriptome = transcriptome
     }
@@ -54,7 +53,6 @@ workflow EXPRESSION {
     salmon_tables(quant_paths, input_gtf, output_basename, outdir)
     salmon_multiqc = salmon_tables.out.salmon_multiqc
     salmon_tpm = salmon_tables.out.salmon_tpm
-    test = salmon_quasi.out.test
 
     // Run featurecounts if bam files for input exist and strand info is available
     if (featurecounts_input != null && paired_end == true){
@@ -64,5 +62,4 @@ workflow EXPRESSION {
     emit:
     salmon_multiqc
     salmon_tpm
-    test
 }

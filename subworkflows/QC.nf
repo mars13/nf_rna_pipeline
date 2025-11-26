@@ -38,7 +38,7 @@ workflow QC {
 
     // Run strandedness
     if (paired_end_check == true){
-         strand = checkStrand(reads, kallisto_index, reference_gtf, outdir).strand
+        strand = checkStrand(reads, kallisto_index, reference_gtf, outdir).strand
         
         // Map strand info to strandedness format used downstream
         strandedness = strand.map{ it -> getStrandtype(it) }
@@ -54,7 +54,7 @@ workflow QC {
             sort: true
         )
 
-    }else{
+    } else {
         strand = null
         strandedness = null
         strand_file = null        
