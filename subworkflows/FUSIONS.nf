@@ -2,14 +2,13 @@ include { starAlignChimeric; runArriba} from '../modules/arriba'
 
 workflow FUSIONS {
     take:
-    reads  // tuple: (sample_id, [fastq1, fastq2])
-    vcf // tuple: (sample_id, vcf) or (sample_id, null) if no vcf available
-    paired_end
-    arriba_reference
-    outdir
+    reads             // Tuple: (sample_id, [fastq1, fastq2])
+    vcf               // Tuple: (sample_id, vcf) or (sample_id, null) if no vcf available
+    paired_end        // Channel bool, paired end or not
+    arriba_reference  // Path arriba reference location
+    outdir            // Path to output dir
 
     main:
-
     // Location to the Arriba reference
     reference = channel.fromPath("${arriba_reference}**")
 
@@ -19,11 +18,6 @@ workflow FUSIONS {
 
     // Get gtf from the reference folder
     gtf = reference.filter(~/.*\.gtf/).first()
-
-    //Debug
-    //fa.view()
-    //fa_fai.view()
-    //gtf.view()
 
     // Take optional files and passing empty file if empty
     blacklist = reference.filter(~/.*blacklist.*/).ifEmpty{ file("EMPTY_BLACKLIST")}.first()
@@ -38,5 +32,12 @@ workflow FUSIONS {
                     .join(vcf)
 
     // Run Arriba
-    runArriba(arriba_input, fa, gtf, blacklist, whitelist, protein_domains, outdir)
+    runArriba(arriba_input, 
+        fa, 
+        gtf,
+        blacklist, 
+        whitelist, 
+        protein_domains, 
+        outdir
+    )
 }

@@ -36,7 +36,6 @@ workflow QC {
             newLine: true,
             sort: true
         )
-
     } else {
         strand = null
         strandedness = null

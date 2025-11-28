@@ -56,7 +56,7 @@ workflow EXPRESSION {
 
     // Run featurecounts if bam files for input exist and strand info is available
     if (featurecounts_input != null && paired_end == true){
-    featurecounts(featurecounts_input, input_gtf, outdir)
+        featurecounts(featurecounts_input, input_gtf, outdir)
     }
 
     emit:

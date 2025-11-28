@@ -99,7 +99,7 @@ process salmon_tables {
         ${quant_paths} \
         ${gtf} \
         ${prefix}
-    """
+        """
 }
 
 // Run featurecounts 

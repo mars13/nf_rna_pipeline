@@ -40,8 +40,8 @@ workflow ASSEMBLY {
                     .map { it -> it.toString() } // Change paths to strings
 
         // Store gtflist in outputdir
-        // replaceFirst is a groovy statement to replace part of a string based on a pattern
-        gtf_paths.map { it -> it.replaceFirst("${workDir}/[^/]*/[^/]*/", "${outdir}/stringtie/") } //Replace the work dir path with the output dir
+        // Replace the work dir path with the output dir
+        gtf_paths.map { it -> it.replaceFirst("${workDir}/[^/]*/[^/]*/", "${outdir}/stringtie/") } 
             .collectFile(
                 name: 'gtflist.txt',
                 storeDir: "${outdir}/stringtie/",
@@ -51,7 +51,6 @@ workflow ASSEMBLY {
         gtf_list = gtf_paths.collectFile(
             name: 'gtflist.txt',
             newLine: true, sort: true )
-
     } else {
         stringtie_multiqc = null
     }
@@ -74,9 +73,6 @@ workflow ASSEMBLY {
         gtf_novel = mergeGTF.out.merged_gtf
         gtf_tracking = mergeGTF.out.tracking
 
-        // Set channel containing paths to r scripts
-        //scripts_dir = Channel.fromPath("${workflow.projectDir}/bin/")
-        
         // Run filter annotate r script
         // TODO: Sort exons in gtf and add transcript biotype for stringtie tx
         filterAnnotate( reference_gtf,
@@ -93,7 +89,7 @@ workflow ASSEMBLY {
 
         transcriptome_fasta(merged_filtered_gtf, masked_fasta, outdir)
         assembled_transcriptome_fasta = transcriptome_fasta.out
-    }else{
+    } else {
         merged_filtered_gtf = null
         assembled_transcriptome_fasta = null
     }
