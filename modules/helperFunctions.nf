@@ -43,7 +43,7 @@ def check_duplicate_samples(String filePath) {
     return has_duplicates
 }
 
-
+// Checks existence of given file path, can be a file or a directory
 def check_files(name, path, type) {
     if(!path) {
         error "When running merge without assembly you must provide `${name}`."
@@ -75,6 +75,7 @@ def check_files(name, path, type) {
     }
 }
 
+// Checks existence of files listed in this function
 def checkInputFiles() {
     // Check inputs
     def default_strand =  "${params.outdir}/check_strandedness/strandedness_all.txt"
@@ -231,4 +232,23 @@ def is_paired_end(String filePath) {
     }
 
     return uniqueFlags.iterator().next()
+}
+
+// Groovy function to check if strand type exists and to set the strand type if found
+def getStrandtype(strand_tuple) {
+    def (sample_id, strand) = strand_tuple
+    def strand_type = null
+
+    if (strand ==~ /.*RF\/fr-firststrand/) {
+        strand_type = tuple(sample_id, "rf", 1)
+    } else if (strand ==~ /.*FR\/fr-secondstrand/) {
+        strand_type = tuple(sample_id, "fr", 2)
+    } else {
+        strand_type = tuple(sample_id, "unstranded", 0)
+        // Optionally warn or exit here
+        // println "WARNING: Data for ${sample_id} is unstranded"
+        // exit 1
+    }
+
+    return strand_type
 }

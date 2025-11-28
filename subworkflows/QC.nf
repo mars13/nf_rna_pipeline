@@ -1,34 +1,16 @@
 include { fastp } from '../modules/fastp'
 include { checkStrand } from '../modules/strandedness'
-
-// Groovy function to check if strand type exists and to set the strand type if found
-def getStrandtype(strand_tuple) {
-    def (sample_id, strand) = strand_tuple
-    def strand_type = null
-
-    if (strand ==~ /.*RF\/fr-firststrand/) {
-        strand_type = tuple(sample_id, "rf", 1)
-    } else if (strand ==~ /.*FR\/fr-secondstrand/) {
-        strand_type = tuple(sample_id, "fr", 2)
-    } else {
-        strand_type = tuple(sample_id, "unstranded", 0)
-        // Optionally warn or exit here
-        // println "WARNING: Data for ${sample_id} is unstranded"
-        // exit 1
-    }
-
-    return strand_type
-}
+include { getStrandtype } from '../modules/helperFunctions.nf'
 
 //Run fastp on the input reads and obatains their strandedness
 workflow QC {
     take:
-    reads          // Input fastq files
-    paired_end_check
-    paired_end     // Bool, true if paired end data
-    kallisto_index // Path to the kallisto index file
-    reference_gtf  // Path to the reference gtf 
-    outdir         // Path to output dir
+    reads               // Input fastq files
+    paired_end_check    // Bool, true if paired end data
+    paired_end          // Channel bool, true if paired end data
+    kallisto_index      // Path to the kallisto index file
+    reference_gtf       // Path to the reference gtf 
+    outdir              // Path to output dir
     store_trimmed_reads // Bool, true if trimmed reads need to be stored
 
     main:

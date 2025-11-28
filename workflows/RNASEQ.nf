@@ -11,8 +11,8 @@ workflow RNASEQ {
 
     // Initialise workflow
     // Set module toggles based on run_mode
-    run_qc        = params.run_mode == "qc" ? true  : (params.run_mode == "qc_restart" ? false : params.qc)
-    run_align     = params.run_mode == "qc" ? false : params.align 
+    run_qc         = params.run_mode == "qc" ? true  : (params.run_mode == "qc_restart" ? false : params.qc)
+    run_align      = params.run_mode == "qc" ? false : params.align 
     run_assembly   = params.run_mode == "qc" ? false : params.assembly
     run_merge      = params.run_mode == "qc" ? false : params.merge
     run_fusions    = params.run_mode == "qc" ? false : params.fusions
@@ -29,9 +29,8 @@ workflow RNASEQ {
 
     // Check if input is paired_end or single end and prevent mixing
     boolean paired_end_check = is_paired_end(params.input)
+    // Turn into channel to give to modules
     paired_end = channel.from(paired_end_check).first()
-    println("paired_end_check:")
-    println(paired_end_check)
 
     // Create input channel from samplesheet
     ch_input = channel.fromList(samplesheetToList(params.input, "assets/schema_input.json"))
