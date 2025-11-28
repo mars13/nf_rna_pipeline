@@ -4,26 +4,26 @@ process checkStrand {
     publishDir "${outdir}/check_strandedness", mode: 'copy'
 
     input:
-    tuple val(sample_id), path(reads) // Tuple containing sample id and read paths
-    val kallisto_index                // Path to kallisto index dir
-    val reference_gtf                 // Path to input reference gtf file
-    val strandedness_check     // Val, number of reads to use for strandedness check
-    val outdir                        // Path to output directory
+        tuple val(sample_id), path(reads) // Tuple containing sample id and read paths
+        val kallisto_index                // Path to kallisto index dir
+        val reference_gtf                 // Path to input reference gtf file
+        val strandedness_check     // Val, number of reads to use for strandedness check
+        val outdir                        // Path to output directory
 
     output:
-    tuple val("${sample_id}"), stdout, emit: strand
-    path "${sample_id}.txt", emit: strand_file
+        tuple val("${sample_id}"), stdout, emit: strand
+        path "${sample_id}.txt", emit: strand_file
 
     script:
-    """
-    check_strandedness \
-        -g ${reference_gtf} \
-        -n ${strandedness_check} \
-        -r1 ${reads[0]} \
-        -r2 ${reads[1]} \
-        -k "${kallisto_index}" >> "${sample_id}.txt"
-    strandedness=\$(tail -n 1 ${sample_id}.txt | awk 'NF>1{print \$NF}')
-    printf "%s\t%s" "${sample_id}" "\$strandedness"
-    rm -r stranded_test_* >&2
-    """
+        """
+        check_strandedness \
+            -g ${reference_gtf} \
+            -n ${strandedness_check} \
+            -r1 ${reads[0]} \
+            -r2 ${reads[1]} \
+            -k "${kallisto_index}" >> "${sample_id}.txt"
+        strandedness=\$(tail -n 1 ${sample_id}.txt | awk 'NF>1{print \$NF}')
+        printf "%s\t%s" "${sample_id}" "\$strandedness"
+        rm -r stranded_test_* >&2
+        """
 }
