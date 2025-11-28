@@ -166,7 +166,7 @@ workflow RNASEQ {
         .map { row ->
                 def sample_id = row[0]    // Sample Id
                 def strand_label = row[1] // Strand value
-                def file_path = row[2]    // BAM file path
+                def file_path = row[3]    // BAM file path
                 [sample_id, strand_label, file_path]
             }
 
