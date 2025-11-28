@@ -7,6 +7,7 @@ process checkStrand {
     tuple val(sample_id), path(reads) // Tuple containing sample id and read paths
     val kallisto_index                // Path to kallisto index dir
     val reference_gtf                 // Path to input reference gtf file
+    val strandedness_check     // Val, number of reads to use for strandedness check
     val outdir                        // Path to output directory
 
     output:
@@ -16,8 +17,8 @@ process checkStrand {
     script:
     """
     check_strandedness \
-        -g ${params.reference_gtf} \
-        -n 1000000 \
+        -g ${reference_gtf} \
+        -n ${strandedness_check} \
         -r1 ${reads[0]} \
         -r2 ${reads[1]} \
         -k "${kallisto_index}" >> "${sample_id}.txt"

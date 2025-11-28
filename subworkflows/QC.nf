@@ -1,17 +1,18 @@
-include { fastp } from '../modules/fastp'
-include { checkStrand } from '../modules/strandedness'
+include { fastp }         from '../modules/fastp'
+include { checkStrand }   from '../modules/strandedness'
 include { getStrandtype } from '../modules/helperFunctions.nf'
 
 //Run fastp on the input reads and obatains their strandedness
 workflow QC {
     take:
-    reads               // Input fastq files
-    paired_end_check    // Bool, true if paired end data
-    paired_end          // Channel bool, true if paired end data
-    kallisto_index      // Path to the kallisto index file
-    reference_gtf       // Path to the reference gtf 
-    outdir              // Path to output dir
-    store_trimmed_reads // Bool, true if trimmed reads need to be stored
+    reads                     // Input fastq files
+    paired_end_check          // Bool, true if paired end data
+    paired_end                // Channel bool, true if paired end data
+    kallisto_index            // Path to the kallisto index file
+    reference_gtf             // Path to the reference gtf 
+    strandedness_check        // Val, number of reads to use for strandedness check
+    outdir                    // Path to output dir
+    store_trimmed_reads       // Bool, true if trimmed reads need to be stored
 
     main:
     // Run fastp and sets the output fastq file to variable trimmed_reads
@@ -20,7 +21,7 @@ workflow QC {
 
     // Run strandedness
     if (paired_end_check == true){
-        strand = checkStrand(reads, kallisto_index, reference_gtf, outdir).strand
+        strand = checkStrand(reads, kallisto_index, reference_gtf, strandedness_check, outdir).strand
         
         // Map strand info to strandedness format used downstream
         strandedness = strand.map{ it -> getStrandtype(it) }

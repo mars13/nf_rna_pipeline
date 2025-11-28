@@ -82,6 +82,7 @@ workflow RNASEQ {
         paired_end,
         params.kallisto_index,
         params.reference_gtf,
+        params.strandedness_check,
         params.outdir,
         params.store_trimmed_reads)
         
