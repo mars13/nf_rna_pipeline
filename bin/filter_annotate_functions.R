@@ -454,7 +454,7 @@ sort_gtf <- function(gtf_df) {
   #Transform to DT for improved speed
   dt <- data.table::as.data.table(gtf_df)
   
-  # 1. Rank genes by coordinate
+  # Step 1: Rank genes by coordinate
   # Get existing gene entries
   gene_rows <- dt[type == "gene", .(seqnames, start, end, strand, gene_id)]
   
@@ -477,7 +477,7 @@ sort_gtf <- function(gtf_df) {
   # Merge gene_rank
   dt <- gene_dt[, .(gene_id, gene_rank)][dt, on = "gene_id"]
   
-  # 2: Rank transcripts within genes
+  # Step 2: Rank transcripts within genes
   trans_dt <- dt[type == "transcript", .(gene_id, transcript_id,seqnames, start, end)]
   trans_dt <- unique(trans_dt)
   data.table::setorder(trans_dt, seqnames,  start, -end, gene_id, transcript_id)
@@ -487,22 +487,32 @@ sort_gtf <- function(gtf_df) {
   dt <- trans_dt[, .(transcript_id, transcript_rank)][dt, on = "transcript_id"]
   
   # Step 3: Feature type priority
-  known_order <- c("gene", "transcript", "exon", "CDS")
+  priority_map <- c(
+    gene = 1,
+    transcript = 2,
+    exon = 3,
+    CDS = 4,
+    UTR = 4, 
+    start_codon = 4
+  )
+  
   dt[, feature_rank := data.table::fifelse(
-    type %in% known_order,
-    match(type, known_order),
-    length(known_order) + as.integer(as.factor(type))
+    type %in% names(priority_map),
+    priority_map[as.character(type)],
+    4 + as.integer(as.factor(type))
   )]
   
   # Step 4: Start-aware feature position
-  data.table::setorder(dt, gene_rank, transcript_rank, feature_rank, seqnames, start, -end)
-  dt[, feature_position := .I]
+  dt[type %in% c("exon", "CDS", "UTR", "start_codon") & strand == "+",  feature_order := start]
+  dt[type %in% c("exon", "CDS", "UTR", "start_codon") & strand == "-",  feature_order := -start]
+  
+  dt[!type %in% c("exon", "CDS", "UTR", "start_codon"), feature_order := start]
   
   # Step 5: Final sort
-  data.table::setorder(dt, gene_rank, transcript_rank, feature_rank, feature_position)
+  data.table::setorder(dt, gene_rank, transcript_rank, feature_rank, feature_order)
   
   # Step 6: Cleanup temporary columns
-  dt[, c("gene_rank", "transcript_rank", "feature_rank", "feature_position") := NULL]
+  dt[, c("gene_rank", "transcript_rank", "feature_rank", "feature_order") := NULL]
   
   return(dt)
 }

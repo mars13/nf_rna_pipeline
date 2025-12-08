@@ -17,8 +17,8 @@
 # 1. outfile.tsv: expression matrix of novel transcripts (from StringTie)
 
 # Track versions:
-script_version <- "2.0"
-script_date <- "07-05-2025"
+script_version <- "2.1"
+script_date <- "08-12-2025"
 
 # Load required packages
 message(paste(Sys.time(), "Loading required libraries ..."), sep = "\t")
@@ -62,8 +62,10 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   
   # Load reference GTF file for comparison and annotation purposes
   # v2.0: Added exon_number and transcript_biotype, removed transcript_name
+  # v2.1: Import GTF allowing either gene_biotype or gene_type to be present
+  
   gtf_reference <- rtracklayer::import.gff(gtf_ref_path, colnames = c(
-    "type", "source", "gene_id", "gene_name", "gene_biotype", "transcript_id", "transcript_biotype", "exon_number"
+    "type", "source", "gene_id", "gene_name", "gene_biotype", "gene_type", "transcript_id", "transcript_biotype", "exon_number"
   )) 
 
   # Load assembled (novel) GTF file for filtering and fixing
@@ -80,11 +82,37 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   # Convert GTF to a data frame for further processing
   gtf_ref_df <- as.data.frame(gtf_reference)
   novel_gtf_df <- data.frame(novel_gtf)
-
+  
+  #v2.1: # --- FIX gene_biotype vs gene_type ---------------------------------------
+  
+  # If gene_biotype is missing or all NA, but gene_type exists, use gene_type
+  if (!"gene_biotype" %in% colnames(gtf_ref_df) ||
+      all(is.na(gtf_ref_df$gene_biotype))) {
+    if ("gene_type" %in% colnames(gtf_ref_df)) {
+      gtf_ref_df$gene_biotype <- gtf_ref_df$gene_type
+    }
+  }
+  
+  # Same correction for GRanges metadata
+  if (!"gene_biotype" %in% names(mcols(gtf_reference)) ||
+      all(is.na(mcols(gtf_reference)$gene_biotype))) {
+    if ("gene_type" %in% names(mcols(gtf_reference))) {
+      mcols(gtf_reference)$gene_biotype <- mcols(gtf_reference)$gene_type
+    }
+  }
+  
+  # Remove gene_type entirely to avoid leaking into output
+  gtf_ref_df$gene_type <- NULL
+  if ("gene_type" %in% names(mcols(gtf_reference))) {
+    mcols(gtf_reference)$gene_type <- NULL
+  }
+  
+  # SELECT NOVEL TRANSCRIPTS ---------------------------
+  
   # Discard unwanted transcript classes (reference overlaps) for efficient processing
   unwanted_transctripts <- c("=", "c", "j", "m", "n", "e", "r", "s")
   transcripts_discard <- novel_gtf_df[which(novel_gtf_df$type == "transcript" &
-    novel_gtf_df$class_code %in% unwanted_transctripts), ]
+                                              novel_gtf_df$class_code %in% unwanted_transctripts), ]
   novel_gtf_df <- novel_gtf_df[!novel_gtf_df$transcript_id %in% transcripts_discard$transcript_id, ]
   
   # LOGGING: Starting transcript number
@@ -106,7 +134,6 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
 
   # LOGGING: Number of non mono-exonic transcripts
   log_monoexonic <- length(unique(mono_exonic_novel$transcript_id))
-
 
   # FILTER: Keep transcripts based on minimum occurrence and expression threshold
   # If min_tpm=0 the number of samples from tracking file will be taken
@@ -185,26 +212,42 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
     base_columns <- c(base_columns, "xr_overlap", "nr_overlap")
   }
   
-  # Subset the GTF
+  # Subset columns and merge novel with reference
   merged_gtf <- as.data.frame(novel_gtf_df)[, base_columns] %>% 
                 bind_rows(gtf_ref_df)
+  
+  # Sort gtf by feture ranking and coordinate
+  # v2.1: Sort both positive and negative strand from 5' to 3'
   merged_gtf_sorted <- sort_gtf(merged_gtf)
   
-  # Fill in missing gene names
-  merged_gtf_sorted$gene_name <- ifelse(is.na(merged_gtf_sorted$gene_name), merged_gtf_sorted$gene_id,merged_gtf_sorted$gene_name )
-
+  # Fill in missing fields
+  # v2.1: Add NA string for missing gene/transcript biotypes for compatibility
+  merged_gtf_sorted <- merged_gtf_sorted %>% 
+    mutate(
+      gene_name = ifelse(is.na(gene_name),
+                         gene_id,
+                         gene_name), 
+      gene_biotype = if_else(
+        is.na(gene_biotype) | gene_biotype == "",
+        "NA",
+        gene_biotype
+      ),
+      transcript_biotype = if_else(
+        type != "gene" & (is.na(transcript_biotype) | transcript_biotype == ""),
+        "NA",
+        transcript_biotype
+      )
+    )
+  
   # Turn df into GRanges
   output_gtf <- GenomicRanges::makeGRangesFromDataFrame(merged_gtf_sorted, keep.extra.columns = T)
   
-
   # DEFINE OUTPUT FILES ---------------------------
   output_gtf_path <- paste(output_prefix, "gtf", sep = ".")
-  output_gtf_path_tmp <- paste(output_gtf_path, "tmp", sep = ".")
   output_info_path <- paste(output_prefix, "tsv", sep = ".")
   output_log_path <- paste(output_prefix, "log", sep = ".")
 
   # WRITE LOG FILE ---------------------------
-
   ## Initialise log file
   cat("#GTF FILTERING", script_version, "(last updated", script_date, ")", "\n", file = output_log_path)
   cat("#gtf_ref_path=", gtf_ref_path, "\n", file = output_log_path, append = T)
@@ -234,6 +277,9 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   export(object = output_gtf, con = output_gtf_path, format = "gtf", version = "2")
   lines <- readLines(output_gtf_path)
   modified_lines <- gsub("; ID.*", "", lines)
+  header_line <- paste0("##Custom GTF generated with filter_annotate.R version ", script_version,
+                        " (", script_date, ")")
+  modified_lines <- c(header_line, modified_lines)
   writeLines(modified_lines, output_gtf_path)
   write.table(output_info, file = output_info_path, sep = "\t", row.names = F, quote = F)
   message(paste(Sys.time(), "Exporting custom gtf ... Done!"), sep = "\t")
