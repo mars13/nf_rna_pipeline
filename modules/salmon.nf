@@ -94,7 +94,6 @@ process featurecounts {
     -t : specify feature type in GTF annotation (exon by default)
     -g : specify attribute type in GTF annotation (gene_id by default)
     */
-    //TODO: Add strand-specific read counting
 
     script:
         """
