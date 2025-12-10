@@ -147,6 +147,11 @@
             "description": "",
             "default": "",
             "properties": {
+                "strandedness_check": {
+                    "type": "integer",
+                    "description": "Number of reads to use for strandedness check",
+                    "default": 1000000
+                },
                 "store_trimmed_reads": {
                     "type": "boolean",
                     "description": "Whether to publish trimmed reads to the output folder, needed for qc_restart runs",
