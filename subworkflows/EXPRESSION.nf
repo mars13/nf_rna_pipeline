@@ -1,4 +1,4 @@
-include { salmon_index; salmon_quasi; salmon_bam; salmon_tables; featurecounts} from '../modules/salmon'
+include { salmon_index; salmon_quasi; salmon_tables; featurecounts} from '../modules/salmon'
 
 /*
 * Run salmon steps to obtain expression statistics
@@ -10,7 +10,7 @@ workflow EXPRESSION {
     featurecounts_input
     assembled_gtf   // Path to assembled transcriptome gtf file
     assembled_fasta // Path to assembled transcriptome sequences file
-    mode            // Salmon mode to run
+    mode            // Expression mode to run
     paired_end      // Bool, is data paired end or not
     transcriptome   // Path to the input transcriptome file
     reference_gtf   // Path to the input reference gtf file
@@ -43,10 +43,6 @@ workflow EXPRESSION {
             name: 'quant_paths.txt',
             newLine: true, sort: true )
 
-    } else if (mode =~ /sa/ ) {
-        //salmon_bam(filtered_bam, transcriptome, outdir)
-        println "This mode is not supported yet."
-        exit 1
     }
 
     // Run the salmon_tables Rscript to obtain expression tables
@@ -55,7 +51,7 @@ workflow EXPRESSION {
     salmon_tpm = salmon_tables.out.salmon_tpm
 
     // Run featurecounts if bam files for input exist and strand info is available
-    if (featurecounts_input != null && paired_end == true){
+    if (mode =~ /fc/ && featurecounts_input != null && paired_end == true){
         featurecounts(featurecounts_input, input_gtf, outdir)
     }
 

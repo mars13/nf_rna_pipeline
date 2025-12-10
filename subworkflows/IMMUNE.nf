@@ -1,4 +1,4 @@
-include { salmon_index; salmon_quasi; salmon_bam } from '../modules/salmon'
+include { salmon_index; salmon_quasi } from '../modules/salmon'
 
 workflow IMMUNE {
 

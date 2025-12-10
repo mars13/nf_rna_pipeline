@@ -50,33 +50,6 @@ process salmon_quasi {
         """
 }
 
-// Run Salmon using input BAM file
-process salmon_bam {
-    label "salmon"
-    publishDir "${outdir}/salmon", mode: 'copy', pattern: "${sample_id}/*"
-
-    input:
-        tuple(val(sample_id), path(bam))
-        path transcriptome
-        val outdir
-
-    output:
-        path "${sample_id}/*"
-
-    script:
-        """
-        salmon quant \
-        -t "${transcriptome}" \
-        -a "${bam}" \
-        --libType "A" \
-        --gcBias \
-        --quiet \
-        --numGibbsSamples 30 \
-        --threads $task.cpus \
-        --output "${sample_id}"
-        """
-}
-
 // Create satistics table using the salmon output
 process salmon_tables {
     label "salmon_tables"
