@@ -57,7 +57,7 @@ source(functions_file)
 
 
 filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurrence, min_tpm, output_prefix, gtf_refseq_basename) {
-  
+
   # IMPORT AND PREPARE GTFs------------
   
   # Load reference GTF file for comparison and annotation purposes
@@ -67,23 +67,23 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   gtf_reference <- rtracklayer::import.gff(gtf_ref_path, colnames = c(
     "type", "source", "gene_id", "gene_name", "gene_biotype", "gene_type", "transcript_id", "transcript_biotype", "exon_number"
   )) 
-
+  
   # Load assembled (novel) GTF file for filtering and fixing
   novel_gtf <- rtracklayer::import(novel_gtf_path)
-
+  
   # Force chromosome style to Ensembl
   GenomeInfoDb::seqlevelsStyle(gtf_reference) <- "Ensembl"
   GenomeInfoDb::seqlevelsStyle(novel_gtf) <- "Ensembl"
-
+  
   # Remove scaffolds and unstranded
   novel_gtf <- novel_gtf[seqnames(novel_gtf) %in% c(1:22, "X", "Y"), ]
   novel_gtf <- novel_gtf[strand(novel_gtf) != "*", ]
-
+  
   # Convert GTF to a data frame for further processing
   gtf_ref_df <- as.data.frame(gtf_reference)
   novel_gtf_df <- data.frame(novel_gtf)
   
-  #v2.1: # --- FIX gene_biotype vs gene_type ---------------------------------------
+  #v2.1: FIX gene_biotype vs gene_type
   
   # If gene_biotype is missing or all NA, but gene_type exists, use gene_type
   if (!"gene_biotype" %in% colnames(gtf_ref_df) ||
@@ -115,9 +115,14 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
                                               novel_gtf_df$class_code %in% unwanted_transctripts), ]
   novel_gtf_df <- novel_gtf_df[!novel_gtf_df$transcript_id %in% transcripts_discard$transcript_id, ]
   
+  #v2.1: Check for empty df after filtering steps
+  if (exit_if_empty(novel_gtf_df, gtf_ref_df, output_prefix, script_version, script_date)) {
+    return()
+  }
+  
   # LOGGING: Starting transcript number
   log_start <- length(unique(novel_gtf_df$transcript_id))
-
+  
   # Load tracking file and merge information with novel GTF data frame
   tracking <- read_tracking_file(tracking_file)
   novel_gtf_df <- merge_tracking_info(novel_gtf_df, tracking)
@@ -130,10 +135,15 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   
   # FILTER: Remove mono-exonic transcripts
   mono_exonic_novel <- count_mono_exonics(gtf = novel_gtf_df)
-  novel_gtf_df <- novel_gtf_df[!(novel_gtf_df$transcript_id %in% mono_exonic_novel$transcript_id), ]
-
+  novel_gtf_df <- novel_gtf_df[!(novel_gtf_df$transcript_id %in% mono_exonic_novel$transcript_id), ]  
+  if (exit_if_empty(novel_gtf_df, gtf_ref_df, output_gtf_path, script_version, script_date)) {
+    return()
+  }
+  
   # LOGGING: Number of non mono-exonic transcripts
   log_monoexonic <- length(unique(mono_exonic_novel$transcript_id))
+  
+
 
   # FILTER: Keep transcripts based on minimum occurrence and expression threshold
   # If min_tpm=0 the number of samples from tracking file will be taken
@@ -144,41 +154,51 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   }
   
   transcripts_keep <- novel_gtf_df[occurrence_mask, ]$transcript_id
-
+  
   novel_gtf_df <- novel_gtf_df[occurrence_mask, ]
-
+  
+  if (exit_if_empty(novel_gtf_df, gtf_ref_df, output_prefix, script_version, script_date)) {
+    return()
+  }
+  
   # LOGGING: Store transcripts failing occurrence threshold
   log_occurrence <- log_start - log_monoexonic - length(unique(transcripts_keep))
-
+  
   # Add biotype to custom annotation based on reference ID
   novel_gtf_df$gene_biotype <- gtf_ref_df$gene_biotype[match(novel_gtf_df$gene_id, gtf_ref_df$gene_id)]
   novel_gtf_df[which(is.na(novel_gtf_df$gene_biotype)), "gene_biotype"] <- "stringtie"
-
+  
   # FILTER: Transcripts overlapping reference transcripts, multiple genes and same strand I class
   unexpected_overlap_txs <- suppressWarnings(find_unexpected_overlaps(gtf = novel_gtf_df, gtf_reference = gtf_reference))
   multigene_txs <- suppressWarnings(find_multigene_overlaps(gtf = novel_gtf_df, gtf_reference = gtf_reference))
+  
   ## v2.0: Performance improvement by general findOverlaps() instead of iterating over tx IDs
   same_strand_i_txs <- suppressWarnings(filter_i_class(gtf_df = novel_gtf_df, reference_granges = gtf_reference))
-
+  
   overlapping_txs <- c(unexpected_overlap_txs, multigene_txs, same_strand_i_txs)
   
   novel_gtf_df <- subset(novel_gtf_df,
                          !(novel_gtf_df$transcript_id %in% overlapping_txs))
+  
+  #v2.1: Check for empty df after filtering steps
+  if (exit_if_empty(novel_gtf_df, gtf_ref_df, output_prefix, script_version, script_date)) {
+    return()
+  }
   
   # LOGGING: Get final number of transcripts to be added
   log_unexpected_overlaps <-  length(unique(unexpected_overlap_txs))
   log_multigene <- length(unique(multigene_txs))
   log_same_strand <- length(unique(same_strand_i_txs))
   log_final <- length(unique(novel_gtf_df$transcript_id))
-
+  
   # WARNINGS: Check for genes with transcripts on multiple strands
   novel_gtf_multiple_strands <- novel_gtf_df %>%
     group_by(gene_id) %>%
     summarize(nstrands = length(unique(strand)))
-
+  
   # Count the number of genes with transcripts on multiple strands
   log_multiple_strands <- sum(novel_gtf_multiple_strands$nstrands > 1)
-
+  
   # WARNINGS: Flagging RefSeq transcripts (only if provided)
   if (!is.null(gtf_refseq_basename) && gtf_refseq_basename != "") {
     novel_gtf_df <- annotate_overlap(gtf = novel_gtf_df, gtf_refseq_basename = gtf_refseq_basename, x_name = "xr")
@@ -214,7 +234,7 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   
   # Subset columns and merge novel with reference
   merged_gtf <- as.data.frame(novel_gtf_df)[, base_columns] %>% 
-                bind_rows(gtf_ref_df)
+    bind_rows(gtf_ref_df)
   
   # Sort gtf by feture ranking and coordinate
   # v2.1: Sort both positive and negative strand from 5' to 3'
@@ -222,7 +242,9 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   
   # Fill in missing fields
   # v2.1: Add NA string for missing gene/transcript biotypes for compatibility
+  merged_gtf_sorted$gene_name <- ifelse(is.na(merged_gtf_sorted$gene_name), merged_gtf_sorted$gene_id,merged_gtf_sorted$gene_name )
   merged_gtf_sorted <- merged_gtf_sorted %>% 
+    # Replace missing/empty biotype fields
     mutate(
       gene_name = ifelse(is.na(gene_name),
                          gene_id,
@@ -242,12 +264,14 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   # Turn df into GRanges
   output_gtf <- GenomicRanges::makeGRangesFromDataFrame(merged_gtf_sorted, keep.extra.columns = T)
   
+    
   # DEFINE OUTPUT FILES ---------------------------
   output_gtf_path <- paste(output_prefix, "gtf", sep = ".")
   output_info_path <- paste(output_prefix, "tsv", sep = ".")
   output_log_path <- paste(output_prefix, "log", sep = ".")
-
+  
   # WRITE LOG FILE ---------------------------
+  
   ## Initialise log file
   cat("#GTF FILTERING", script_version, "(last updated", script_date, ")", "\n", file = output_log_path)
   cat("#gtf_ref_path=", gtf_ref_path, "\n", file = output_log_path, append = T)
@@ -256,7 +280,7 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   cat("#gtf_refseq_basename=", gtf_refseq_basename, "\n", file = output_log_path, append = T)
   cat("#min_occurrence=", min_occurrence, "\n", file = output_log_path, append = T)
   cat("#min_tpm=", min_tpm, "\n", file = output_log_path, append = T)
-
+  
   ## Add filtering steps
   cat("Novel transcripts - stranded, not in scaffolds:", "\t", log_start, "\n", file = output_log_path, append = T)
   cat("Filtered monoexonic:", "\t", log_monoexonic, "\n", file = output_log_path, append = T)
@@ -271,7 +295,7 @@ filterGTF <- function( novel_gtf_path, gtf_ref_path, tracking_file, min_occurren
   cat("Info - Genes with transcripts on multiple strands:", "\t", log_multiple_strands, "\n", file = output_log_path, append = T)
   cat("Info - RefSeq xr overlap:", "\t", log_xr_overlap, "\n", file = output_log_path, append = T)
   cat("Info - RefSeq nr overlap:", "\t", log_nr_overlap, "\n", file = output_log_path, append = T)
-
+  
   # WRITE FINAL GTF AND INFO TABLE ---------------------------
   message(paste(Sys.time(), "Exporting custom gtf ... "), sep = "\t")
   export(object = output_gtf, con = output_gtf_path, format = "gtf", version = "2")

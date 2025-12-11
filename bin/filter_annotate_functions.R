@@ -516,3 +516,82 @@ sort_gtf <- function(gtf_df) {
   
   return(dt)
 }
+
+
+#' Exit Early if Novel GTF is Empty and Write Reference-Only Output
+#'
+#' This helper function checks whether the `novel_gtf_df` has become empty during
+#' the filtering pipeline. If it is empty, the function:
+#' \itemize{
+#'   \item Emits a message informing that only the reference GTF will be exported.
+#'   \item Exports the reference GTF to the specified output path.
+#'   \item Prepends a header line with script metadata (version and date).
+#'   \item Writes an empty info table to the specified output path.
+#'   \item Writes a log file describing that the novel entries became empty.
+#'   \item Returns `TRUE` to indicate that execution should stop.
+#' }
+#'
+#' If `novel_gtf_df` is not empty, the function returns `FALSE`, allowing the
+#' pipeline to continue normally.
+#'
+#' @param novel_gtf_df A data frame containing novel GTF entries.
+#' @param gtf_ref_df A data frame containing the reference GTF to be exported
+#'        if no novel entries remain.
+#' @param output_gtf_path File path where the resulting GTF should be written.
+#' @param output_log_path File path for writing the log file describing the exit event.
+#' @param script_version A character string indicating the script version.
+#' @param script_date A character string indicating the script date.
+#'
+#' @return `TRUE` if the function exported the reference GTF and the caller should
+#'         exit further processing; `FALSE` otherwise.
+#'
+#' @import GenomicRanges
+#' @importFrom rtracklayer export
+#' @export
+exit_if_empty <- function(novel_gtf_df, gtf_ref_df, output_prefix, script_version, script_date) {
+  # DEFINE OUTPUT FILES ---------------------------
+  output_gtf_path <- paste(output_prefix, "gtf", sep = ".")
+  output_info_path <- paste(output_prefix, "tsv", sep = ".")
+  output_log_path <- paste(output_prefix, "log", sep = ".")
+  
+  if (nrow(novel_gtf_df) == 0) {
+    
+    message("novel_gtf_df is empty - exporting reference-only output.")
+    
+    # ---- Write reference GTF with header ----
+    output_gtf <- GenomicRanges::makeGRangesFromDataFrame(
+      gtf_ref_df, keep.extra.columns = TRUE
+    )
+    export(output_gtf, con = output_gtf_path, format = "gtf", version = "2")
+    
+    lines <- readLines(output_gtf_path)
+    writeLines(
+      c(
+        paste0("##GTF generated with filter_annotate.R version ",
+               script_version, " (", script_date, ")"),
+        lines
+      ),
+      output_gtf_path
+    )
+    
+    # ---- Write empty info table ----
+    write.table(
+      data.frame(),
+      file = output_info_path,
+      sep = "\t", row.names = FALSE, quote = FALSE
+    )
+    
+    # ---- Write log ----
+    cat(
+      "#GTF FILTERING", script_version, "(updated ", script_date, ")\n",
+      "Novel GTF became empty during filtering.\n",
+      "Output contains only reference GTF.\n",
+      file = output_log_path,
+      sep = ""
+    )
+    
+    return(TRUE)
+  }
+  
+  return(FALSE)
+}
