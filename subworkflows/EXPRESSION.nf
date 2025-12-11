@@ -18,6 +18,11 @@ workflow EXPRESSION {
     outdir          // Path to output directory
 
     main:
+
+    // Initialize outputs as empty
+    salmon_multiqc = channel.empty()
+    salmon_tpm = channel.empty()
+    
     // Use stringtie created transcriptome if set to true, otherwise use reference
     if (params.created_transcriptome_expression && assembled_gtf != null){
         input_gtf = assembled_gtf.first()
@@ -28,7 +33,7 @@ workflow EXPRESSION {
         input_transcriptome = transcriptome
     }
     
-    if (mode =~ /sq/) {
+    if (mode =~ /.*sq.*/) {
         // Create the salmon index of the given transcriptome
         salmon_index(input_transcriptome)
 
@@ -43,15 +48,17 @@ workflow EXPRESSION {
             name: 'quant_paths.txt',
             newLine: true, sort: true )
 
+        // Run the salmon_tables Rscript to obtain expression tables
+        salmon_tables(quant_paths, input_gtf, output_basename, outdir)
+        salmon_multiqc = salmon_tables.out.salmon_multiqc
+        salmon_tpm = salmon_tables.out.salmon_tpm
     }
 
-    // Run the salmon_tables Rscript to obtain expression tables
-    salmon_tables(quant_paths, input_gtf, output_basename, outdir)
-    salmon_multiqc = salmon_tables.out.salmon_multiqc
-    salmon_tpm = salmon_tables.out.salmon_tpm
 
     // Run featurecounts if bam files for input exist and strand info is available
-    if (mode =~ /fc/ && featurecounts_input != null && paired_end == true){
+    
+    if (mode =~ /.*fc.*/){
+        print("Running featurecounts for expression quantification")
         featurecounts(featurecounts_input, input_gtf, outdir)
     }
 

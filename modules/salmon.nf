@@ -81,7 +81,7 @@ process featurecounts {
     publishDir "${outdir}/featurecounts", mode: 'copy'
 
     input:
-        tuple val(sample_id), val(featurecounts), path(bam) // Tuple of sample id and input read file(s)
+        tuple val(sample_id), val(strand), val(paired_end), path(bam) // Tuple of sample id and input read file(s)
         val reference_gtf                                   // Path to the input reference gtf file
         val outdir                                          // Path to output directory
 
@@ -90,18 +90,19 @@ process featurecounts {
 
     /*
     optional parameters to be considered:
-    -s : perform strand-specific read counting
     -t : specify feature type in GTF annotation (exon by default)
     -g : specify attribute type in GTF annotation (gene_id by default)
     */
 
     script:
+        paired_flag = (paired_end == true) ? "-p" : ""
+
         """
         mkdir -p ${sample_id}
         featureCounts \
-        -p \
+        ${paired_flag} \
         -t gene \
-        -s ${featurecounts} \
+        -s ${strand} \
         -a ${reference_gtf} \
         -o ${sample_id}/featurecounts_result.out \
         -T $task.cpus \

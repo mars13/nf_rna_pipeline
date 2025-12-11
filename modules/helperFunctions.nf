@@ -158,7 +158,7 @@ def checkInputFiles() {
 
     // Check expression parameters
     if (params.expression) {
-        assert params.expression_mode in ["sq", "sa", "sqfc", "safc"]: "`expression_mode` must be one of the following: sq, sa, sqfc, safc"
+        assert params.expression_mode in ["sq", "fc", "sqfc"]: "`expression_mode` must be one of the following: sq, fc, sqfc"
 
         if (!bam_avail & (params.expression_mode != "sq")) {
             log.info "expression mode  : ${params.expression_mode} --> sq [forced to quasi-mapping, no bam avail]"

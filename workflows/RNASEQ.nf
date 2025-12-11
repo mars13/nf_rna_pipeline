@@ -167,7 +167,7 @@ workflow RNASEQ {
                 def sample_id = row[0]    // Sample Id
                 def strand_label = row[1] // Strand value
                 def file_path = row[3]    // BAM file path
-                [sample_id, strand_label, file_path]
+                [sample_id, strand_label, file_path, paired_end_check]
             }
 
         ASSEMBLY(stringtie_input,
@@ -207,24 +207,27 @@ workflow RNASEQ {
     */
     if (run_expression) {
         // Join the strand info with the bam file to prevent sample mixing
-        if (paired_end_check == true){
+        if (run_align){
             featurecounts_input = strand.join(bam)
             .map { row ->
                     def sample_id = row[0]    // Sample Id
                     def strand_code = row[2]  // Strand code value
                     def file_path = row[3]    // BAM file path
-                    [sample_id, strand_code, file_path]
+                    [sample_id, strand_code, paired_end_check, file_path]
                 }
         } else {
             featurecounts_input = null
+            println "Skipping featurecounts as no new alignments were made."
         }
+
+        featurecounts_input.view()
         
         EXPRESSION(star_input,
             featurecounts_input,
             assembled_gtf,
             assembled_fasta,
             params.expression_mode,
-            paired_end,
+            paired_end_check,
             params.reference_transcriptome,
             params.reference_gtf,
             params.output_basename,
