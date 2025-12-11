@@ -1,0 +1,3 @@
+sample_id,subject_id,sample_type,sequence_type,file_type,filename_1,filename_2
+s1,dummy_s1,tumor,rna,fastq,/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/dummy_data/paired/dummy_s1_R1.fastq.gz,/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/dummy_data/paired/dummy_s1_R2.fastq.gz
+s2,dummy_s2,tumor,rna,fastq,/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/dummy_data/paired/dummy_s2_R1.fastq.gz,/hpc/pmc_vanheesch/projects/Marina/dev/nf_rna_pipeline/test/data/dummy_data/paired/dummy_s2_R2.fastq.gz

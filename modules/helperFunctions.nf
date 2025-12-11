@@ -1,5 +1,5 @@
-def printStartLogs () {
-    log.info """
+def printHeader () {
+    def logMessage =  """
         .-------------------------------------------------------.
         |                _____                 _      _     _   |
         | _ _ ___ ___   |  |  |___ ___ ___ ___| |_   | |___| |_ |
@@ -9,35 +9,46 @@ def printStartLogs () {
 
         ${workflow.manifest.name} ${workflow.manifest.version}
         ==========================
-        run as       : ${workflow.commandLine}
-        started at   : ${workflow.start}
-        config files : ${workflow.configFiles}
-        --
-        project folder   : ${params.project_folder}
-        input from       : ${params.reads_path}
-        output to        : ${params.outdir}
-        reference dir    : ${params.resource_folder}/GENOMES/${params.species}.${params.genome_version}/${params.annot_version}/
-        reference gtf    : ${params.reference_gtf}
-        sample gtf list  : ${params.sample_gtf_list}
-        arriba reference : ${params.arriba_reference}
-        --
-        qc          : ${params.qc}
-        align       : ${params.align}
-        assembly    : ${params.assembly}
-        merge       : ${params.merge}
-        build annot : ${params.build_annotation}
-        expression  : ${params.expression}
-        fusions     : ${params.fusions}
-        ==========================
         """
-        .stripIndent()
+        log.info logMessage.stripIndent()
 }
 
 
+def check_duplicate_samples(String filePath) {
+    // Empty set to store unique sample ids
+    def unique_values = new HashSet()
+    def has_duplicates = false
+
+    // Read the CSV file 
+    new File(filePath).eachLine { line ->
+        // Skip empty lines
+        if (line.trim()) {
+            def columns = line.split(',')
+            // Obtain values from first columns
+            def first_column_value = columns[0].trim()
+
+            // Check if the value is unique
+            if (unique_values.contains(first_column_value)) {
+                // If duplicate found end loop and return true
+                has_duplicates = true
+                return
+            } else {
+                // Add value to set
+                unique_values.add(first_column_value)
+            }
+        }
+    }
+
+    // Return the result: true if duplicates found, false otherwise
+    return has_duplicates
+}
+
+// Checks existence of given file path, can be a file or a directory
 def check_files(name, path, type) {
     if(!path) {
         error "When running merge without assembly you must provide `${name}`."
     } else {
+        def file_to_check = null
         if (type == "dir") {
             file_to_check = file(path, type: "dir")
         } else {
@@ -64,90 +75,180 @@ def check_files(name, path, type) {
     }
 }
 
-def check_params() {
-    //Check inputs
-    if (file(params.reads_path).isEmpty()) {
-        error  "--reads_path: File doesn't exist, check path ${params.reads_path}"
-    }
-
-    default_strand =  "${params.outdir}/check_strandedness/strandedness_all.txt"
+// Checks existence of files listed in this function
+def checkInputFiles() {
+    // Check inputs
+    def default_strand =  "${params.outdir}/check_strandedness/strandedness_all.txt"
     if (!params.qc && ( params.align || params.assembly )) {
         if (!params.strand_info && file(default_strand, type : "file").exists()) {
-            log.info "strand info   : ${default_strand}"
+            log.info "strand info   : ${default_strand}".stripIndent()
         } else if (params.strand_info && file(params.strand_info, type : "file").exists()) {
-            log.info "strand info   : ${params.strand_info}"
+            log.info "strand info   : ${params.strand_info}".stripIndent()
         } else {
             error  """
-                No strand information found in ${default_strand} and no alternative path provided. 
-                When running with `qc = false`, you can define your strandedness info file as --strand_info option from command line  `strand_info=[path_to_file]` in `params.config`
-                The file is expected to be plain text file (tab separated, no headers) with two columns: sample_id and strand information (RF/fr-firststrand, FR/fr-secondstrand, unstranded).
-                """
+                No strand information found in ${default_strand}
+                If `qc = false`, define your strandedness info file with `strand_info` in `params.config`
+                """.stripIndent()
         }
     }
 
-    default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
-    if (!params.align && params.assembly) {
+    // Locate bams
+    def default_bams = "${params.outdir}/star/**/*.Aligned.sortedByCoord.out.bam"
+    def bam_avail = true
+    if (!params.align) {
         if (!params.bam_files && !file(default_bams).isEmpty()) {
-            log.info "bam files     : ${default_bams}"
+            log.info "bam files     : ${default_bams}".stripIndent()
         } else if (params.bam_files && !file(params.bam_files).isEmpty()) {
-            log.info "bam files     : ${params.bam_files}"
+            log.info "bam files     : ${params.bam_files}".stripIndent()
         } else {
-            error  """
-                No bam found in ${default_bams}
-                When running with `align = false`, you can define your bam location as --bam_files option from command line or `bam_files=[path_to_file]` in `params.config`.
-                Please, remember to index your bams.
-                """
+            bam_avail = null
         }
     }
 
-    if (!params.assembly && params.merge) {
-        if(!params.sample_gtf_list) {
-            error "When running merge without assembly you must provide `sample_gtf_list`."
-        } else {
-            sample_gtf_list = file(params.sample_gtf_list, type: "file")
-            if (!sample_gtf_list.exists()) {
-                error  "--sample_gtf_list: file doesn't exist, check path ${params.sample_gtf_list}"
-            }
-        }
-    }
-
-    //Check reference_gtf
+    // Check reference_gtf
     check_files("reference_gtf", params.reference_gtf, "file")
 
-    //Check kallisto index
+    // Check kallisto index
     if (params.qc){
         check_files("kallisto_index", params.kallisto_index, "file")
     }
 
-    //Check star_index_basedir
+    // Check star_index_basedir
     if (params.align){
         check_files("star_index_basedir", params.star_index_basedir, "dir")
     }
 
-    //Check refseq_gtf and masked_fasta for assembly steps
+    // Check bams and references for assembly steps
     if (params.assembly){
-        if (!params.paired_end){
-            error "Transcriptome assembly not supported with single-end reads."
+        if (!bam_avail) {
+            error  """
+                No bam found in ${default_bams}
+                If `align = false`, define your bam location with `bam_files=[path_to_file]` in `params.config`
+                """.stripIndent()
+        }
+
+        check_files("refseq_gtf", "${params.refseq_gtf}*", "file")
+        check_files("masked_fasta", "${params.masked_fasta}", "file")
+    }
+
+    // Check sample gtf list for merge without assembly
+    if (!params.assembly && params.merge) {
+        if(!params.sample_gtf_list) {
+            error "When running merge without assembly you must provide `sample_gtf_list`.".stripIndent()
         } else {
-            check_files("refseq_gtf", "${params.refseq_gtf}*", "file")
-            check_files("masked_fasta", "${params.masked_fasta}", "file")
+            def sample_gtf_list = file(params.sample_gtf_list, type: "file")
+            if (!sample_gtf_list.exists()) {
+                error  "--sample_gtf_list: file doesn't exist, check path ${params.sample_gtf_list}".stripIndent()
+            }
         }
     }
 
+    // Check references for build_annotaiton
     if (params.build_annotation) {
         check_files("twobit", "${params.twobit}*", "file")
     }
 
+    // Check fusion parameters
     if (params.fusions){
         check_files("arriba_reference", params.arriba_reference, "dir")
         check_files("arriba_reference STAR_index_*", "${params.arriba_reference}STAR_index*", "dir")
         check_files("arriba_reference *.gtf", "${params.arriba_reference}*.gtf", "file")
         check_files("arriba_reference *.fa", "${params.arriba_reference}*.fa", "file")
+    }
 
-        if (params.wgs_sv) {
-            check_files("wgs_sv", "${params.wgs_sv}", "dir")
+    // Check expression parameters
+    if (params.expression) {
+        assert params.expression_mode in ["sq", "fc", "sqfc"]: "`expression_mode` must be one of the following: sq, fc, sqfc"
+
+        if (!bam_avail & (params.expression_mode != "sq")) {
+            log.info "expression mode  : ${params.expression_mode} --> sq [forced to quasi-mapping, no bam avail]"
         }
     }
 
+    // Check for duplicate sample ids
+    if (check_duplicate_samples(params.input)) {
+        error "\nERROR: Duplicate sample_ids found in the input samplesheet\n"
+    } 
+
+    log.info "\n==========================\n"
 }
 
+/*
+ * Checks whether all samples in a samplesheet are paired-end or single-end.
+ * Throws an error if there's a mix.
+ *
+ * @param samplesheet_path path to CSV samplesheet
+ * @return true if all samples are paired-end, false if all are single-end
+ */
+def is_paired_end(String filePath) {
+    def uniqueFlags = new HashSet()
+    def headerParsed = false
+    int idx_filename_1 = -1
+    int idx_filename_2 = -1
+    int idx_sequence = -1
+
+    new File(filePath).eachLine { line ->
+        if (!line.trim()) return  // skip empty lines
+
+        def cols = line.split(",")*.trim()
+
+        if (!headerParsed) {
+            idx_filename_1 = cols.indexOf("filename_1")
+            idx_filename_2 = cols.indexOf("filename_2")
+            idx_sequence = cols.indexOf("sequence_type")
+
+            if (idx_filename_1 == -1 || idx_filename_2 == -1) {
+                throw new IllegalArgumentException("Samplesheet missing required columns 'filename_1' or 'filename_2'")
+            }
+            if (idx_sequence == -1) {
+                throw new IllegalArgumentException("Samplesheet missing required column 'sequence'")
+            }
+            headerParsed = true
+        } else {
+            def sequence = (idx_sequence < cols.size()) ? cols[idx_sequence] : null
+
+            if (sequence?.toLowerCase() == "dna") return  // ignore DNA entries
+
+            def f1 = (idx_filename_1 < cols.size()) ? cols[idx_filename_1] : null
+            def f2 = (idx_filename_2 < cols.size()) ? cols[idx_filename_2] : null
+
+            if (!f1) {
+                throw new IllegalArgumentException("Missing filename_1 in row: ${line}")
+            }
+
+            uniqueFlags.add(f2 ? true : false)
+
+            if (uniqueFlags.size() > 1) {
+                throw new IllegalArgumentException("Mixed paired-end and single-end data detected in samplesheet! Please only use one type of data")
+            }
+        }
+    }
+
+    if (!headerParsed) {
+        throw new IllegalArgumentException("Samplesheet is empty or missing header.")
+    }
+    if (uniqueFlags.isEmpty()) {
+        throw new IllegalArgumentException("Samplesheet contains no data rows.")
+    }
+
+    return uniqueFlags.iterator().next()
+}
+
+// Groovy function to check if strand type exists and to set the strand type if found
+def getStrandtype(strand_tuple) {
+    def (sample_id, strand) = strand_tuple
+    def strand_type = null
+
+    if (strand ==~ /.*RF\/fr-firststrand/) {
+        strand_type = tuple(sample_id, "rf", 1)
+    } else if (strand ==~ /.*FR\/fr-secondstrand/) {
+        strand_type = tuple(sample_id, "fr", 2)
+    } else {
+        strand_type = tuple(sample_id, "unstranded", 0)
+        // Optionally warn or exit here
+        // println "WARNING: Data for ${sample_id} is unstranded"
+        // exit 1
+    }
+
+    return strand_type
+}
