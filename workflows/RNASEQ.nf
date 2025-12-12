@@ -219,8 +219,6 @@ workflow RNASEQ {
             featurecounts_input = null
             println "Skipping featurecounts as no new alignments were made."
         }
-
-        featurecounts_input.view()
         
         EXPRESSION(star_input,
             featurecounts_input,
