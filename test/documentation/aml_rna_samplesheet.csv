@@ -1,5 +1,0 @@
-sample_id,subject_id,sample_type,sequence_type,file_type,filename_1,filename_2
-PMABM000ILM,PMCID043AAQ,tumor,rna,fastq,/hpc/pmc_oatv/data/maxima/aml_maxima_pilot/rnaseq/PMABM000ILM_PMCRZ837KBF_R1.fastq.gz,/hpc/pmc_oatv/data/maxima/aml_maxima_pilot/rnaseq/PMABM000ILM_PMCRZ837KBF_R2.fastq.gz
-PMGBM048AAC,PMCID319AAP,tumor,rna,fastq,/hpc/pmc_oatv/data/maxima/aml_maxima_pilot/rnaseq/PMGBM048AAC_PMCRZ911PGO_R1.fastq.gz,/hpc/pmc_oatv/data/maxima/aml_maxima_pilot/rnaseq/PMGBM048AAC_PMCRZ911PGO_R2.fastq.gz
-PMGBM484AAD,PMCID277AAQ,tumor,rna,fastq,/hpc/pmc_oatv/data/maxima/aml_maxima_pilot/rnaseq/PMGBM484AAD_PMCRZ060ZLN_R1.fastq.gz,/hpc/pmc_oatv/data/maxima/aml_maxima_pilot/rnaseq/PMGBM484AAD_PMCRZ060ZLN_R2.fastq.gz
-PMGBM963AAC,PMCID043AAQ,tumor,dna,vcf,/hpc/pmc_oatv/projects/aml_maxima_pilot/analysis/wgs/gridss/PMCID043AAQ/PMGBM963AAC/gridss/PMGBM963AACT.gridss.unfiltered.vcf.gz,
