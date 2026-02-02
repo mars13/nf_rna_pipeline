@@ -21,7 +21,6 @@ workflow EXPRESSION {
 
     // Initialize outputs as empty
     salmon_multiqc = channel.empty()
-    salmon_tpm = channel.empty()
     
     // Use stringtie created transcriptome if set to true, otherwise use reference
     if (params.created_transcriptome_expression && assembled_gtf != null){
@@ -51,7 +50,6 @@ workflow EXPRESSION {
         // Run the salmon_tables Rscript to obtain expression tables
         salmon_tables(quant_paths, input_gtf, output_basename, outdir)
         salmon_multiqc = salmon_tables.out.salmon_multiqc
-        salmon_tpm = salmon_tables.out.salmon_tpm
     }
 
 
@@ -64,5 +62,4 @@ workflow EXPRESSION {
 
     emit:
     salmon_multiqc
-    salmon_tpm
 }

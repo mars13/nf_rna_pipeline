@@ -56,20 +56,13 @@ process stringtie_summary {
     script:
         """
         OUT="all_samples_stringtie_counts_mqc.tsv"
-        echo -e "Sample\tGenes\tTranscripts\tExons\tKnown_transcripts\tNovel_transcripts" >> "\$OUT"
+        echo -e "Sample\tTranscripts\tExons\tKnown_transcripts\tNovel_transcripts" >> "\$OUT"
 
         for GTF in ${gtf_list.join(' ')}; do
             # Extract sample_id from filename
             SAMPLE=\$(basename "\$GTF" .gtf)
 
             transcripts=\$(awk '\$3=="transcript"' "\$GTF" | wc -l)
-            genes=\$(awk -F'\t' '\$3=="transcript" {
-                split(\$9, a, /;/)
-                for (i in a) if (a[i] ~ /gene_id/) {
-                    gsub(/.*gene_id "|"/, "", a[i])
-                    print a[i]
-                }
-            }' "\$GTF" | sort -u | wc -l)
             exons=\$(awk '\$3=="exon"' "\$GTF" | wc -l)
 
             gffcompare -r "$reference_gtf" -o "\${SAMPLE}_gffcmp" "\$GTF"
@@ -79,7 +72,7 @@ process stringtie_summary {
             known=\$(grep 'class_code "[=c]"' "\$ann" | grep -c \$'\ttranscript\t')
             novel=\$((all - known))
 
-            echo -e "\$SAMPLE\t\$genes\t\$transcripts\t\$exons\t\$known\t\$novel" >> "\$OUT"
+            echo -e "\$SAMPLE\t\$transcripts\t\$exons\t\$known\t\$novel" >> "\$OUT"
         done
         """
 }

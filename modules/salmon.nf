@@ -64,7 +64,6 @@ process salmon_tables {
     output:
         path "${prefix}*"
         path "${prefix}_multiqc_summary_mqc.tsv", emit: salmon_multiqc
-        path "${prefix}_transcript_tpms_mqc.tsv", emit: salmon_tpm
 
     script:
         """
